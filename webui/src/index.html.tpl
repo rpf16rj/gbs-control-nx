@@ -332,7 +332,7 @@
                 active
               >
                 <div class="gbs-icon">open_with</div>
-                <div>move</div>
+                <div>offset</div>
               </button>
               <button
                 class="gbs-button gbs-button__control"
@@ -346,7 +346,7 @@
                 gbs-control-target="borders"
               >
                 <div class="gbs-icon">crop_free</div>
-                <div>borders</div>
+                <div>crop</div>
               </button>
             </div>
           </fieldset>
@@ -384,7 +384,7 @@
             <div class="gbs-flex gbs-margin__bottom--16">
               <button class="gbs-button gbs-button__control" active>
                 <div class="gbs-icon">open_with</div>
-                <div>move</div>
+                <div>offset</div>
               </button>
               <button
                 gbs-message="/"
@@ -477,7 +477,7 @@
                 active
               >
                 <div class="gbs-icon">crop_free</div>
-                <div>borders</div>
+                <div>crop</div>
               </button>
               <button
                 gbs-message="D"
@@ -501,7 +501,7 @@
             <div class="">
               <button active class="gbs-button direction">
                 <div class="gbs-icon">open_with</div>
-                <div>move</div>
+                <div>offset</div>
               </button>
               <div class="keyboard">
                 <div>
@@ -603,7 +603,7 @@
             <div class="">
               <button class="gbs-button direction" active>
                 <div class="gbs-icon">crop_free</div>
-                <div>borders</div>
+                <div>crop</div>
               </button>
               <div class="keyboard">
                 <div>
@@ -1442,15 +1442,6 @@
               >
                 <div class="gbs-icon">tune</div>
                 <div id="gbsLblSharp">Sharpness</div>
-              </button>
-              <button
-                gbs-message="d"
-                gbs-message-type="user"
-                gbs-click="normal"
-                class="gbs-button gbs-button__control gbs-button__secondary"
-              >
-                <div class="gbs-icon">border_vertical</div>
-                <div id="gbsLblMask">Mask FX</div>
               </button>
               <button
                 gbs-message="Y"

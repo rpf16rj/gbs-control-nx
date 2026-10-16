@@ -1027,7 +1027,7 @@ section[name="alert"] {
                 active
               >
                 <div class="gbs-icon">open_with</div>
-                <div>move</div>
+                <div>offset</div>
               </button>
               <button
                 class="gbs-button gbs-button__control"
@@ -1041,7 +1041,7 @@ section[name="alert"] {
                 gbs-control-target="borders"
               >
                 <div class="gbs-icon">crop_free</div>
-                <div>borders</div>
+                <div>crop</div>
               </button>
             </div>
           </fieldset>
@@ -1079,7 +1079,7 @@ section[name="alert"] {
             <div class="gbs-flex gbs-margin__bottom--16">
               <button class="gbs-button gbs-button__control" active>
                 <div class="gbs-icon">open_with</div>
-                <div>move</div>
+                <div>offset</div>
               </button>
               <button
                 gbs-message="/"
@@ -1172,7 +1172,7 @@ section[name="alert"] {
                 active
               >
                 <div class="gbs-icon">crop_free</div>
-                <div>borders</div>
+                <div>crop</div>
               </button>
               <button
                 gbs-message="D"
@@ -1196,7 +1196,7 @@ section[name="alert"] {
             <div class="">
               <button active class="gbs-button direction">
                 <div class="gbs-icon">open_with</div>
-                <div>move</div>
+                <div>offset</div>
               </button>
               <div class="keyboard">
                 <div>
@@ -1298,7 +1298,7 @@ section[name="alert"] {
             <div class="">
               <button class="gbs-button direction" active>
                 <div class="gbs-icon">crop_free</div>
-                <div>borders</div>
+                <div>crop</div>
               </button>
               <div class="keyboard">
                 <div>
@@ -2137,15 +2137,6 @@ section[name="alert"] {
               >
                 <div class="gbs-icon">tune</div>
                 <div id="gbsLblSharp">Sharpness</div>
-              </button>
-              <button
-                gbs-message="d"
-                gbs-message-type="user"
-                gbs-click="normal"
-                class="gbs-button gbs-button__control gbs-button__secondary"
-              >
-                <div class="gbs-icon">border_vertical</div>
-                <div id="gbsLblMask">Mask FX</div>
               </button>
               <button
                 gbs-message="Y"
@@ -3511,7 +3502,6 @@ const updateStatusInfo = () => {
         };
         setLabel("gbsLblTbc", `TBC ${s.tbc_mode ? "On" : "Off"}`);
         setLabel("gbsLblSharp", `Sharpness ${s.peaking}`);
-        setLabel("gbsLblMask", `Mask FX ${s.mask_off === 0 ? "Off" : s.mask_off}`);
         setLabel("gbsLblChroma", `Chroma ${s.chroma === 0 ? "Off" : s.chroma}`);
         setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
         setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);

@@ -1154,7 +1154,6 @@ const updateStatusInfo = () => {
         };
         setLabel("gbsLblTbc", `TBC ${s.tbc_mode ? "On" : "Off"}`);
         setLabel("gbsLblSharp", `Sharpness ${s.peaking}`);
-        setLabel("gbsLblMask", `Mask FX ${s.mask_off === 0 ? "Off" : s.mask_off}`);
         setLabel("gbsLblChroma", `Chroma ${s.chroma === 0 ? "Off" : s.chroma}`);
         setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
         setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
