@@ -13,6 +13,11 @@
 #include <LittleFS.h>
 #include <ArduinoOTA.h>
 #ifdef ESP8266
+#include <Updater.h>
+#else
+#include <Update.h>
+#endif
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #else
@@ -714,6 +719,48 @@ void startWebserver()
     });
 
     // Same semantics as /sc but under the versioned API path.
+    // HTTP firmware upload: POST a .bin (multipart field "firmware" or raw
+    // body) to /update. The ESP pulls the image - no PC-side listener needed,
+    // so no inbound firewall hole required (unlike espota's TCP callback).
+    server.on(
+        "/update", HTTP_POST,
+        [](AsyncWebServerRequest *request) {
+            bool ok = !Update.hasError() && Update.isFinished();
+            request->send(ok ? 200 : 500, "text/plain", ok ? "OK, rebooting" : "FAILED");
+            if (ok) {
+                SerialM.println(F("http update ok, rebooting"));
+                delay(300);
+#ifdef ESP8266
+                ESP.reset();
+#else
+                ESP.restart();
+#endif
+            }
+        },
+        [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+            if (index == 0) {
+                SerialM.printf("http update: %s (%u bytes)\n", filename.c_str(), request->contentLength());
+                Update.runAsync(true);
+#ifdef ESP8266
+                if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) {
+#else
+                if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+#endif
+                    Update.printError(Serial);
+                }
+            }
+            if (!Update.hasError() && Update.write(data, len) != len) {
+                Update.printError(Serial);
+            }
+            if (final && !Update.hasError()) {
+                if (Update.end(true)) {
+                    SerialM.printf("http update done: %u bytes\n", index + len);
+                } else {
+                    Update.printError(Serial);
+                }
+            }
+        });
+
     server.on("/api/v1/cmd", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (ESP.getFreeHeap() > 10000 && request->params() > 0) {
             const AsyncWebParameter *p = request->getParam(0);

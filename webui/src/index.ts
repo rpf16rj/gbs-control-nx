@@ -1482,6 +1482,36 @@ const initStatusPolling = () => {
   setInterval(updateStatusInfo, 3000);
 };
 
+// Firmware upload via /update - the ESP pulls the .bin over plain HTTP,
+// so no inbound firewall hole is needed (unlike espota's TCP callback).
+const initFirmwareUpload = () => {
+  const fileInput = document.getElementById("gbsFwFile") as HTMLInputElement;
+  const btn = document.getElementById("gbsFwBtn");
+  const lbl = document.getElementById("gbsLblFw");
+  if (!fileInput || !btn || !lbl) return;
+  btn.addEventListener("click", () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      lbl.textContent = "pick .bin";
+      return;
+    }
+    lbl.textContent = "uploading...";
+    const formData = new FormData();
+    formData.append("firmware", file, "firmware.bin");
+    fetch("/update", { method: "POST", body: formData })
+      .then((r) => r.text())
+      .then((t) => {
+        lbl.textContent = t;
+        if (t.startsWith("OK")) {
+          gbsAlert("Firmware updated - device is rebooting.");
+        }
+      })
+      .catch(() => {
+        lbl.textContent = "rebooting...";
+      });
+  });
+};
+
 const initUI = () => {
   updateCustomSlotFilters();
   initGeneralListeners();
@@ -1496,6 +1526,7 @@ const initUI = () => {
   initDeveloperMode();
   initHelp();
   initStatusPolling();
+  initFirmwareUpload();
 };
 
 const main = () => {

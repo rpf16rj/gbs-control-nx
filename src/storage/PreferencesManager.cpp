@@ -75,6 +75,17 @@ void saveUserPrefs()
     f.write(uopt->sdramClock);       // #23 raw byte (values 0-7 or 0xff)
     f.write(uopt->peakingLevel + '0'); // #24
 
+    // #25-#31: experimental processing state (raw bytes, not ascii).
+    // Saved on every prefs write; restored into rto on boot so the
+    // doPostPresetLoadSteps() reapply block picks them up automatically.
+    f.write(rto->fxFlags);                 // #25
+    f.write(rto->svmGain);                 // #26
+    f.write(rto->crispMode);               // #27
+    f.write(rto->interpBypass);            // #28
+    f.write(rto->chromaShift);             // #29
+    f.write(rto->outSyncSel);              // #30
+    f.write((uint8_t)rto->maskMoireOff);   // #31 (int8, may be negative)
+
     f.close();
     syncReverseRotaryEncoderIsrMirror();
 }

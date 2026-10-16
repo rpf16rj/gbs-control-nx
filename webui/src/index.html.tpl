@@ -1730,6 +1730,33 @@
           </fieldset>
           <fieldset class="gbs-fieldset">
             <legend class="gbs-fieldset__legend">
+              <div class="gbs-icon">system_update</div>
+              <div>Firmware</div>
+            </legend>
+            <!-- prettier-ignore -->
+            <ul class="gbs-help">
+              <li>Upload a firmware .bin directly - no OTA/firewall hassle</li>
+              <li>Device reboots after a successful upload</li>
+            </ul>
+            <div class="gbs-flex">
+              <input
+                type="file"
+                id="gbsFwFile"
+                accept=".bin"
+                class="gbs-button"
+                style="flex-grow: 1; min-width: 0"
+              />
+              <button
+                class="gbs-button gbs-button__control gbs-button__secondary"
+                id="gbsFwBtn"
+              >
+                <div class="gbs-icon">cloud_upload</div>
+                <div id="gbsLblFw">Upload</div>
+              </button>
+            </div>
+          </fieldset>
+          <fieldset class="gbs-fieldset">
+            <legend class="gbs-fieldset__legend">
               <div class="gbs-icon">wifi</div>
               <div>Wi-Fi</div>
             </legend>

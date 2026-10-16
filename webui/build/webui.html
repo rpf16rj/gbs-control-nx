@@ -2425,6 +2425,33 @@ section[name="alert"] {
           </fieldset>
           <fieldset class="gbs-fieldset">
             <legend class="gbs-fieldset__legend">
+              <div class="gbs-icon">system_update</div>
+              <div>Firmware</div>
+            </legend>
+            <!-- prettier-ignore -->
+            <ul class="gbs-help">
+              <li>Upload a firmware .bin directly - no OTA/firewall hassle</li>
+              <li>Device reboots after a successful upload</li>
+            </ul>
+            <div class="gbs-flex">
+              <input
+                type="file"
+                id="gbsFwFile"
+                accept=".bin"
+                class="gbs-button"
+                style="flex-grow: 1; min-width: 0"
+              />
+              <button
+                class="gbs-button gbs-button__control gbs-button__secondary"
+                id="gbsFwBtn"
+              >
+                <div class="gbs-icon">cloud_upload</div>
+                <div id="gbsLblFw">Upload</div>
+              </button>
+            </div>
+          </fieldset>
+          <fieldset class="gbs-fieldset">
+            <legend class="gbs-fieldset__legend">
               <div class="gbs-icon">wifi</div>
               <div>Wi-Fi</div>
             </legend>
@@ -3762,6 +3789,36 @@ const initStatusPolling = () => {
     updateStatusInfo();
     setInterval(updateStatusInfo, 3000);
 };
+// Firmware upload via /update - the ESP pulls the .bin over plain HTTP,
+// so no inbound firewall hole is needed (unlike espota's TCP callback).
+const initFirmwareUpload = () => {
+    const fileInput = document.getElementById("gbsFwFile");
+    const btn = document.getElementById("gbsFwBtn");
+    const lbl = document.getElementById("gbsLblFw");
+    if (!fileInput || !btn || !lbl)
+        return;
+    btn.addEventListener("click", () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+            lbl.textContent = "pick .bin";
+            return;
+        }
+        lbl.textContent = "uploading...";
+        const formData = new FormData();
+        formData.append("firmware", file, "firmware.bin");
+        fetch("/update", { method: "POST", body: formData })
+            .then((r) => r.text())
+            .then((t) => {
+            lbl.textContent = t;
+            if (t.startsWith("OK")) {
+                gbsAlert("Firmware updated - device is rebooting.");
+            }
+        })
+            .catch(() => {
+            lbl.textContent = "rebooting...";
+        });
+    });
+};
 const initUI = () => {
     updateCustomSlotFilters();
     initGeneralListeners();
@@ -3776,6 +3833,7 @@ const initUI = () => {
     initDeveloperMode();
     initHelp();
     initStatusPolling();
+    initFirmwareUpload();
 };
 const main = () => {
     const ip = location.hostname;

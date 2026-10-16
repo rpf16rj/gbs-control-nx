@@ -704,7 +704,8 @@ void handleType2Command(char argument)
             GBS::OUT_SYNC_SEL::write(rto->outSyncSel);
             SerialM.print(F("OUT_SYNC_SEL: "));
             SerialM.println(rto->outSyncSel);
-        } break;
+            saveUserPrefs();
+            } break;
         case 'd': {
             // "aperture grille" experiment: deliberate offsets on VDS_HSCALE
             // create periodic column brightness variation (vertical dark
@@ -723,7 +724,8 @@ void handleType2Command(char argument)
             SerialM.print((int)rto->maskMoireOff);
             SerialM.print(F(" hscale: 0x"));
             SerialM.println(GBS::VDS_HSCALE::read(), HEX);
-        } break;
+            saveUserPrefs();
+            } break;
         case 'Y': {
             // composite-style chroma shift (color fringing, mask-like effect):
             // cycles U delay, V delay, both, none
@@ -734,7 +736,8 @@ void handleType2Command(char argument)
             SerialM.print(rto->chromaShift & 1);
             SerialM.print(F(","));
             SerialM.println((rto->chromaShift >> 1) & 1);
-        } break;
+            saveUserPrefs();
+            } break;
         case 'I': {
             // shift image left (move display window, keep size)
             uint16_t st = GBS::VDS_DIS_HB_ST::read(), sp = GBS::VDS_DIS_HB_SP::read();
@@ -796,7 +799,8 @@ void handleType2Command(char argument)
             GBS::VDS_SVM_OFFSET::write(on ? 0x20 : 0);
             SerialM.print(F("SVM gain: 0x"));
             SerialM.println(rto->svmGain, HEX);
-        } break;
+            saveUserPrefs();
+            } break;
         case '!': {
             // Real scaler-filter bypass: VDS_TAP6_BYPS (3_24 bit3) disables
             // the 6-tap scaling filter -> hard pixel edges. Plain on/off;
@@ -807,7 +811,8 @@ void handleType2Command(char argument)
             setTap6Bypass(rto->interpBypass);
             SerialM.print(F("interp bypass: "));
             SerialM.println(rto->interpBypass ? F("on (tap6)") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         // --- REA-discovered blocks (preset arrays bypass them; fxFlags bits
         // are re-applied in doPostPresetLoadSteps) ---
         // (command chars chosen from URL-unreserved set: - _ ~ ( ))
@@ -819,7 +824,8 @@ void handleType2Command(char argument)
             GBS::VDS_NR_C_BYPS::write(on ? 0 : 1);
             SerialM.print(F("noise reduction: "));
             SerialM.println(on ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case '_': {
             // black level expansion (3_2A b0, bypassed in presets;
             // level/gain already tuned by preset: 3_28/3_29)
@@ -828,7 +834,8 @@ void handleType2Command(char argument)
             GBS::VDS_BLEV_BYPS::write(on ? 0 : 1);
             SerialM.print(F("black expand: "));
             SerialM.println(on ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case '~': {
             // white level expansion (3_56 b7, bypassed; gain s3_58)
             rto->fxFlags ^= 0x04;
@@ -836,7 +843,8 @@ void handleType2Command(char argument)
             GBS::VDS_W_LEV_BYPS::write(on ? 0 : 1);
             SerialM.print(F("white expand: "));
             SerialM.println(on ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case '(': {
             // blue stretch (3_73 b3, bypassed)
             rto->fxFlags ^= 0x08;
@@ -844,7 +852,8 @@ void handleType2Command(char argument)
             GBS::VDS_BLUE_BYPS::write(on ? 0 : 1);
             SerialM.print(F("blue stretch: "));
             SerialM.println(on ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case ')': {
             // vertical + chroma peaking (3_4E b1/b3, bypassed;
             // chroma gain s3_4F=0x1E already set by preset)
@@ -854,7 +863,8 @@ void handleType2Command(char argument)
             GBS::VDS_C_VPK_BYPS::write(on ? 0 : 1);
             SerialM.print(F("vert/chroma peaking: "));
             SerialM.println(on ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case 'y': {
             // U/V swap - hue inversion (3_24 b0). Pure fun/reversible.
             rto->fxFlags ^= 0x20;
@@ -862,7 +872,8 @@ void handleType2Command(char argument)
             GBS::VDS_UV_FLIP::write(on);
             SerialM.print(F("uv flip: "));
             SerialM.println(on ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case 'G': {
             // color-correction engines C1 + C2 (3_65 b5 / 3_6B b5, bypassed;
             // gains/tag slopes already set by presets)
@@ -872,7 +883,8 @@ void handleType2Command(char argument)
             GBS::VDS_C2_BYPS::write(on ? 0 : 1);
             SerialM.print(F("color correction: "));
             SerialM.println(on ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case ',': {
             // chroma noise suppressor (3_60 b2, bypassed)
             rto->fxFlags ^= 0x80;
@@ -880,7 +892,8 @@ void handleType2Command(char argument)
             GBS::VDS_NS_BYPS::write(on ? 0 : 1);
             SerialM.print(F("chroma noise supp: "));
             SerialM.println(on ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case ';': {
             // "crisp pixel" macro: tap6 bypass + 5-band peaking boost +
             // coring against noise + stronger step response
@@ -888,7 +901,8 @@ void handleType2Command(char argument)
             applyCrispMode(rto->crispMode);
             SerialM.print(F("crisp mode: "));
             SerialM.println(rto->crispMode ? F("on") : F("off"));
-        } break;
+            saveUserPrefs();
+            } break;
         case ':': {
             // step response strength (3_2B b0-3): steeper luma edges
             static const uint8_t sg[4] = {1, 4, 8, 0xF};
