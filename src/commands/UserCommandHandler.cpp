@@ -816,6 +816,53 @@ void handleType2Command(char argument)
             SerialM.print(F("interp bypass: "));
             SerialM.println(rto->interpBypass ? F("on (tap6)") : F("off"));
         } break;
+        // --- REA-discovered blocks (preset arrays bypass them; fxFlags bits
+        // are re-applied in doPostPresetLoadSteps) ---
+        // (command chars chosen from URL-unreserved set: - _ ~ ( ))
+        case '-': {
+            // noise reduction: Y + C paths (3_52 b4/b5, bypassed in presets)
+            rto->fxFlags ^= 0x01;
+            uint8_t on = rto->fxFlags & 0x01;
+            GBS::VDS_NR_Y_BYPS::write(on ? 0 : 1);
+            GBS::VDS_NR_C_BYPS::write(on ? 0 : 1);
+            SerialM.print(F("noise reduction: "));
+            SerialM.println(on ? F("on") : F("off"));
+        } break;
+        case '_': {
+            // black level expansion (3_2A b0, bypassed in presets;
+            // level/gain already tuned by preset: 3_28/3_29)
+            rto->fxFlags ^= 0x02;
+            uint8_t on = rto->fxFlags & 0x02;
+            GBS::VDS_BLEV_BYPS::write(on ? 0 : 1);
+            SerialM.print(F("black expand: "));
+            SerialM.println(on ? F("on") : F("off"));
+        } break;
+        case '~': {
+            // white level expansion (3_56 b7, bypassed; gain s3_58)
+            rto->fxFlags ^= 0x04;
+            uint8_t on = rto->fxFlags & 0x04;
+            GBS::VDS_W_LEV_BYPS::write(on ? 0 : 1);
+            SerialM.print(F("white expand: "));
+            SerialM.println(on ? F("on") : F("off"));
+        } break;
+        case '(': {
+            // blue stretch (3_73 b3, bypassed)
+            rto->fxFlags ^= 0x08;
+            uint8_t on = rto->fxFlags & 0x08;
+            GBS::VDS_BLUE_BYPS::write(on ? 0 : 1);
+            SerialM.print(F("blue stretch: "));
+            SerialM.println(on ? F("on") : F("off"));
+        } break;
+        case ')': {
+            // vertical + chroma peaking (3_4E b1/b3, bypassed;
+            // chroma gain s3_4F=0x1E already set by preset)
+            rto->fxFlags ^= 0x10;
+            uint8_t on = rto->fxFlags & 0x10;
+            GBS::VDS_PK_Y_V_BYPS::write(on ? 0 : 1);
+            GBS::VDS_C_VPK_BYPS::write(on ? 0 : 1);
+            SerialM.print(F("vert/chroma peaking: "));
+            SerialM.println(on ? F("on") : F("off"));
+        } break;
         default:
             break;
     }

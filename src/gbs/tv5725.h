@@ -124,6 +124,7 @@ public:
     typedef UReg<0x00, 0x11, 1, 1> STATUS_VDS_OUT_BLANK;
     typedef UReg<0x00, 0x11, 4, 11> STATUS_VDS_VERT_COUNT;
 
+    typedef UReg<0x00, 0x13, 0, 8> STATUS_13; // whole register for convenience
     typedef UReg<0x00, 0x13, 0, 1> STATUS_MEM_FF_WFF_FIFO_FULL;
     typedef UReg<0x00, 0x13, 1, 1> STATUS_MEM_FF_WFF_FIFO_EMPTY;
     typedef UReg<0x00, 0x13, 2, 1> STATUS_MEM_FF_RFF_FIFO_FULL;

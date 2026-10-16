@@ -101,6 +101,8 @@ struct runTimeOptions
     uint8_t outSyncSel;   // 'c': last OUT_SYNC_SEL value written
     uint8_t interpBypass; // '!': VDS_TAP6_BYPS state, reapplied after presets
     uint8_t svmGain;      // '*': VDS_SVM_GAIN level, reapplied after presets
+    uint8_t fxFlags;      // REA effects: bit0 NR, bit1 BLEV, bit2 WLEV,
+                          // bit3 blue-stretch, bit4 vpk (vert+chroma peaking)
 };
 // remember adc options across presets
 struct adcOptions

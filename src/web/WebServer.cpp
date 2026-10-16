@@ -87,6 +87,13 @@ static struct {
     uint8_t sync2En;
     uint8_t svmGain;
     uint8_t intByps;
+    uint8_t ifFmt0;    // STATUS_00: IF autodetect (NTSC/PAL/VGA, int/prg, SD)
+    uint8_t ifFmt4;    // STATUS_04: 1080i/HD/INT/PRG flags
+    uint8_t chipId;    // CHIP_ID_PRODUCT - which die is actually on the board
+    uint8_t chipRev;
+    uint8_t pullDown;  // STATUS_DEINT_PULLDN - 3:2 pulldown detected
+    uint8_t fifoFlags; // STATUS_MEM_FF_* FIFO health byte
+    uint16_t outVtotal; // STATUS_VDS_VERT_COUNT - live output lines
     float srcHz;
 } apiTel;
 
@@ -107,6 +114,13 @@ void updateApiTelemetry()
     apiTel.intByps = (uint8_t)(GBS::VDS_TAP6_BYPS::read() |
                                (GBS::VDS_1ST_INT_BYPS::read() << 1) |
                                (GBS::VDS_2ND_INT_BYPS::read() << 2));
+    apiTel.ifFmt0 = GBS::STATUS_00::read();
+    apiTel.ifFmt4 = GBS::STATUS_04::read();
+    apiTel.chipId = GBS::CHIP_ID_PRODUCT::read();
+    apiTel.chipRev = GBS::CHIP_ID_REVISION::read();
+    apiTel.pullDown = GBS::STATUS_DEINT_PULLDN::read();
+    apiTel.fifoFlags = GBS::STATUS_13::read();
+    apiTel.outVtotal = GBS::STATUS_VDS_VERT_COUNT::read();
 
     // getSourceFieldRate() drives the debug pin / test bus, so keep it slow
     if (rto->sourceDisconnected || !apiTel.vsActive) {
@@ -655,6 +669,22 @@ void startWebserver()
         json += apiTel.intByps;
         json += F(",\"svm\":");
         json += apiTel.svmGain;
+        json += F(",\"fx\":");
+        json += rto->fxFlags;
+        json += F(",\"if_fmt0\":");
+        json += apiTel.ifFmt0;
+        json += F(",\"if_fmt4\":");
+        json += apiTel.ifFmt4;
+        json += F(",\"chip_id\":");
+        json += apiTel.chipId;
+        json += F(",\"chip_rev\":");
+        json += apiTel.chipRev;
+        json += F(",\"pulldown\":");
+        json += apiTel.pullDown;
+        json += F(",\"fifo\":");
+        json += apiTel.fifoFlags;
+        json += F(",\"out_vtotal\":");
+        json += apiTel.outVtotal;
         json += F(",\"last_reg\":");
         json += apiLastRegRead;
         json += F("}");

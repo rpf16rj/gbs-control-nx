@@ -1533,6 +1533,53 @@
                 <div id="gbsLblInterp">Interp Bypass</div>
               </button>
             </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="-"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">blur_off</div>
+                <div id="gbsLblNr">NR</div>
+              </button>
+              <button
+                gbs-message="_"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">brightness_low</div>
+                <div id="gbsLblBlev">Black Exp</div>
+              </button>
+              <button
+                gbs-message="~"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">brightness_high</div>
+                <div id="gbsLblWlev">White Exp</div>
+              </button>
+              <button
+                gbs-message="("
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">water_drop</div>
+                <div id="gbsLblBlue">Blue Str</div>
+              </button>
+              <button
+                gbs-message=")"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">border_horizontal</div>
+                <div id="gbsLblVpk">V/Chroma Pk</div>
+              </button>
+            </div>
           </fieldset>
           <fieldset class="gbs-fieldset">
             <legend class="gbs-fieldset__legend gbs-fieldset__legend--help"">

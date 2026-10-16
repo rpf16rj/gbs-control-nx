@@ -1224,6 +1224,25 @@ void doPostPresetLoadSteps()
         GBS::VDS_SVM_VCLK_DELAY::write(4);
         GBS::VDS_SVM_OFFSET::write(0x20);
     }
+
+    // re-apply REA-discovered user effects (preset arrays bypass them all)
+    if (rto->fxFlags & 0x01) { // noise reduction (Y + C paths)
+        GBS::VDS_NR_Y_BYPS::write(0);
+        GBS::VDS_NR_C_BYPS::write(0);
+    }
+    if (rto->fxFlags & 0x02) { // black level expansion
+        GBS::VDS_BLEV_BYPS::write(0);
+    }
+    if (rto->fxFlags & 0x04) { // white level expansion
+        GBS::VDS_W_LEV_BYPS::write(0);
+    }
+    if (rto->fxFlags & 0x08) { // blue stretch
+        GBS::VDS_BLUE_BYPS::write(0);
+    }
+    if (rto->fxFlags & 0x10) { // vertical + chroma peaking
+        GBS::VDS_PK_Y_V_BYPS::write(0);
+        GBS::VDS_C_VPK_BYPS::write(0);
+    }
     /*if (uopt->wantTap6) { GBS::VDS_TAP6_BYPS::write(0); }
   else {
     GBS::VDS_TAP6_BYPS::write(1);

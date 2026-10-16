@@ -1134,10 +1134,30 @@ const updateStatusInfo = () => {
     fetch(`/api/v1/status?${+new Date()}`)
         .then((r) => r.json())
         .then((s) => {
+        var _a;
         const el = document.getElementById("gbsInfoText");
         if (!el) {
             return;
         }
+        // decode IF autodetect flags (STATUS_00 / STATUS_04)
+        const fmt = (() => {
+            const b0 = s.if_fmt0, b4 = s.if_fmt4;
+            if (b0 & 0x08)
+                return "NTSC-i";
+            if (b0 & 0x10)
+                return "NTSC-p";
+            if (b0 & 0x20)
+                return "PAL-i";
+            if (b0 & 0x40)
+                return "PAL-p";
+            if (b4 & 0x01)
+                return "1080i";
+            if (b4 & 0x60)
+                return "HD";
+            if (b0 & 0x80)
+                return "SD";
+            return "PC/VGA";
+        })();
         el.textContent = [
             `fw ${s.fw}    ip ${s.ip}`,
             `mode ${s.video_mode}    preset ${s.preset_slot}    pref ${s.preset_pref}`,
@@ -1145,6 +1165,7 @@ const updateStatusInfo = () => {
             `pll div ${s.pll_divider}    lock ${s.pll_locked}`,
             `phase sp ${s.phase_sp}    adc ${s.phase_adc}    sog ${s.sog_level}`,
             `ftl ${s.frame_time_lock}    tbc ${s.tbc_mode}    heap ${s.heap}`,
+            `chip ${(_a = s.chip_id) === null || _a === void 0 ? void 0 : _a.toString(16)} rev ${s.chip_rev}    fmt ${fmt}    pulldn ${s.pulldown}`,
         ].join("\n");
         const setLabel = (id, text) => {
             const btn = document.getElementById(id);
@@ -1159,6 +1180,11 @@ const updateStatusInfo = () => {
         setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
         setLabel("gbsLblSvm", `SVM ${s.svm === 0 ? "Off" : "0x" + s.svm.toString(16)}`);
         setLabel("gbsLblInterp", `Interp Byp ${s.interp ? "On" : "Off"}`);
+        setLabel("gbsLblNr", `NR ${s.fx & 0x01 ? "On" : "Off"}`);
+        setLabel("gbsLblBlev", `Black Exp ${s.fx & 0x02 ? "On" : "Off"}`);
+        setLabel("gbsLblWlev", `White Exp ${s.fx & 0x04 ? "On" : "Off"}`);
+        setLabel("gbsLblBlue", `Blue Str ${s.fx & 0x08 ? "On" : "Off"}`);
+        setLabel("gbsLblVpk", `V/Chroma Pk ${s.fx & 0x10 ? "On" : "Off"}`);
     })
         .catch(() => { });
 };
