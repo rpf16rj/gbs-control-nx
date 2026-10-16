@@ -468,6 +468,12 @@ void applyPresets(uint8_t result)
         return false;
     };
 
+    // Mask mode transitions: stop capture so the VDS doesn't display garbage
+    // while the entire chip is being reprogrammed (upstream #332).
+    // Unfreeze happens at the end of doPostPresetLoadSteps(), or in the
+    // bypass paths below that return early.
+    freezeVideo();
+
     if (result == 1 || result == 3 || result == 8 || result == 9 || result == 14) {
         // NTSC input
         if (uopt->presetPreference == 0) {
@@ -636,6 +642,8 @@ void bypassModeSwitch_RGBHV()
         rto->phaseADC = 16;
         rto->phaseSP = 8;
     }
+    unfreezeVideo(); // may have been frozen for transition masking in applyPresets()
+
     GBS::SP_CLAMP_MANUAL::write(1);  // needs to be 1
     GBS::SP_COAST_INV_REG::write(0); // just in case
 
@@ -903,7 +911,8 @@ void doPostPresetLoadSteps()
         }
 
         if (rto->videoStandardInput == 1 || rto->videoStandardInput == 2) {
-            //GBS::PLLAD_ICP::write(5);         // 5 rather than 6 to work well with CVBS sync as well as CSync
+            GBS::PLLAD_ICP::write(5);            // 5 rather than 6 to work well with CVBS sync as well as CSync
+            latchPLLAD();                        // (Neo Geo MVS/AES fix, ported from tceoo1 fork)
 
             GBS::ADC_FLTR::write(3);             // 5_03 4/5 ADC filter 3=40, 2=70, 1=110, 0=150 Mhz
             GBS::PLLAD_KS::write(2);             // 5_16
@@ -1175,7 +1184,8 @@ void doPostPresetLoadSteps()
     GBS::IF_AUTO_OFST_U_RANGE::write(0); // 0 seems to be full range, else 1 to 15
     GBS::IF_AUTO_OFST_V_RANGE::write(0); // 0 seems to be full range, else 1 to 15
     GBS::IF_AUTO_OFST_PRD::write(0);     // 0 = by line, 1 = by frame ; by line is easier to spot
-    GBS::IF_AUTO_OFST_EN::write(0);      // not reliable yet
+    // was fixed 0 ("not reliable yet"); now persists as opt-in dev option ('E')
+    GBS::IF_AUTO_OFST_EN::write(uopt->ifAutoOffset ? 1 : 0);
     // to get it working with RGB:
     // leave RGB to YUV at the ADC DEC stage (s5_1f 2 = 0)
     // s5s07s42, 1_2a to 0, s5_06 + s5_08 to 0x40
@@ -1188,8 +1198,17 @@ void doPostPresetLoadSteps()
         GBS::VDS_D_RAM_BYPS::write(1);
     }
 
-    if (uopt->wantPeaking) {
+    if (uopt->wantPeaking && uopt->peakingLevel > 0) {
+        // peakingLevel: 1=normal (preset values), 2=strong, 3=max
+        static const uint8_t pkLbGain[4] = {0, 0x16, 0x28, 0x3f};
+        static const uint8_t pkLhGain[4] = {0, 0x18, 0x28, 0x3f};
+        static const uint8_t stepGain[4] = {1, 1, 4, 8};
         GBS::VDS_PK_Y_H_BYPS::write(0);
+        GBS::VDS_PK_LB_GAIN::write(pkLbGain[uopt->peakingLevel]);
+        GBS::VDS_PK_LH_GAIN::write(pkLhGain[uopt->peakingLevel]);
+        if (rto->presetID != 0x05 && rto->presetID != 0x15) {
+            GBS::VDS_STEP_GAIN::write(stepGain[uopt->peakingLevel]);
+        }
     } else {
         GBS::VDS_PK_Y_H_BYPS::write(1);
     }
@@ -1468,6 +1487,14 @@ void doPostPresetLoadSteps()
     } else {
         // normal modes
         rto->applyPresetDoneStage = 1;
+    }
+
+    // user-persisted SDRAM clock override (dev option, 'l' command)
+    if (uopt->sdramClock != 0xff && GBS::PLL_MS::read() != uopt->sdramClock) {
+        GBS::PLL_MS::write(uopt->sdramClock);
+        ResetSDRAM();
+        SerialM.print(F("sdram clock override: PLL_MS="));
+        SerialM.println(uopt->sdramClock);
     }
 
     unfreezeVideo();
@@ -1841,6 +1868,7 @@ void setOutModeHdBypass(bool regsInitialized)
     GBS::PAD_SYNC_OUT_ENZ::write(0); // enable sync out
     delay(200);
     optimizePhaseSP();
+    unfreezeVideo(); // undo applyPresets() transition masking
     SerialM.println(F("pass-through on"));
 }
 

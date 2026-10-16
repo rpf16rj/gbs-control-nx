@@ -9,10 +9,11 @@ Any suggestions or issues are welcome.
 **Supported Platforms:**
 - **ESP8266**
 - **ESP32**: Only classic ESP32 and its variants (ESP32-WROOM-32, ESP32-DevKitC, and compatible boards)
+- **ESP32-C3**: *experimental* — `gbsc_esp32c3` environment (see Config.h for its pin map, differs from classic ESP32)
 
 **⚠️ Not Supported ESP32 Variants:**
 - ESP32-S3-DevKitC:
-- ESP32-H2/H4/C2/C3/C5/C61/C6/S2/P4
+- ESP32-H2/H4/C2/C5/C61/C6/S2/P4
 
 For pin connections and wiring information, see **[PINOUT.md](PINOUT.md)**.
 
@@ -40,6 +41,7 @@ This project uses PlatformIO for building and flashing. Follow these steps to se
    - Navigate to your project environment:
      - **ESP8266**: Select `gbsc` environment
      - **ESP32**: Select `gbsc_esp32` environment
+     - **ESP32-C3** (experimental): Select `gbsc_esp32c3` environment
    - Follow these steps in order:
      1. **General** → **Build** - Compile the firmware
      2. **Platform** → **Erase Flash** - Erase the flash (recommended for clean install)

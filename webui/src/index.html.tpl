@@ -1404,6 +1404,37 @@
             </div>
           </fieldset>
           <fieldset class="gbs-fieldset">
+            <legend class="gbs-fieldset__legend">
+              <div class="gbs-icon">info</div>
+              <div>Status</div>
+            </legend>
+            <pre
+              id="gbsInfoText"
+              class="gbs-wifi__input"
+              style="white-space: pre-wrap; margin: 0; font-size: 12px; padding: 8px"
+            >loading…</pre>
+            <div class="gbs-flex gbs-margin__bottom--16" style="margin-top: 8px">
+              <button
+                gbs-message="2"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">center_focus_strong</div>
+                <div>Auto Phase</div>
+              </button>
+              <button
+                gbs-message="9"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">settings_input_composite</div>
+                <div>TBC Mode</div>
+              </button>
+            </div>
+          </fieldset>
+          <fieldset class="gbs-fieldset">
             <legend class="gbs-fieldset__legend gbs-fieldset__legend--help"">
               <div class="gbs-icon">sd_card</div>
               <div>Backup [intended for same device]</div>

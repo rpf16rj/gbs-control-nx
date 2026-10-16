@@ -66,9 +66,15 @@ void handleType2Command(char argument)
 #endif
             //
             break;
-        case '2':
-            //
-            break;
+        case '2': {
+            // re-run the sampling phase optimization sweep (SP + ADC phase)
+            SerialM.print(F("auto phase... "));
+            boolean ok = optimizePhaseSP();
+            SerialM.print(ok ? F("ok, phaseSP: ") : F("failed, phaseSP: "));
+            SerialM.print(rto->phaseSP);
+            SerialM.print(F(" phaseADC: "));
+            SerialM.println(rto->phaseADC);
+        } break;
         case '3': // load custom preset
         {
             uopt->presetPreference = OutputCustomized; // custom
@@ -116,9 +122,35 @@ void handleType2Command(char argument)
             }
             saveUserPrefs();
             break;
-        case '9':
-            //
-            break;
+        case '8': {
+            // sharpness/peaking level: 0=off, 1=normal, 2=strong, 3=max
+            uopt->peakingLevel = (uopt->peakingLevel + 1) & 3;
+            SerialM.print(F("peaking level: "));
+            SerialM.println(uopt->peakingLevel);
+            saveUserPrefs();
+            if (uopt->wantPeaking && uopt->peakingLevel > 0) {
+                static const uint8_t pkLbGain[4] = {0, 0x16, 0x28, 0x3f};
+                static const uint8_t pkLhGain[4] = {0, 0x18, 0x28, 0x3f};
+                static const uint8_t stepGain[4] = {1, 1, 4, 8};
+                GBS::VDS_PK_Y_H_BYPS::write(0);
+                GBS::VDS_PK_LB_GAIN::write(pkLbGain[uopt->peakingLevel]);
+                GBS::VDS_PK_LH_GAIN::write(pkLhGain[uopt->peakingLevel]);
+                if (rto->presetID != 0x05 && rto->presetID != 0x15) {
+                    GBS::VDS_STEP_GAIN::write(stepGain[uopt->peakingLevel]);
+                }
+            } else {
+                GBS::VDS_PK_Y_H_BYPS::write(1);
+            }
+        } break;
+        case '9': {
+            // "TBC mode": relaxed sync processor tolerances for unstable sources
+            // (VHS, RF-modulated, off-spec csync). Wider coast windows and ignore.
+            uopt->tbcMode = !uopt->tbcMode;
+            SerialM.print(F("TBC mode: "));
+            SerialM.println(uopt->tbcMode ? F("on") : F("off"));
+            saveUserPrefs();
+            updateSpDynamic(1); // re-apply tolerances immediately
+        } break;
         case 'a':
             webSocket.disconnect();
             Serial.println(F("restart"));
@@ -191,8 +223,28 @@ void handleType2Command(char argument)
                 SerialM.println((uint8_t)(f.read() - '0'));
                 SerialM.print(F("step response = "));
                 SerialM.println((uint8_t)(f.read() - '0'));
+                // file order after #15: full height, calibrate ADC, scanline
+                // strength, disable ext clkgen, reverse OLED rotary, tbc, ifautoofst
+                SerialM.print(F("wantFullHeight = "));
+                SerialM.println((uint8_t)(f.read() - '0'));
+                SerialM.print(F("enableCalibrationADC = "));
+                SerialM.println((uint8_t)(f.read() - '0'));
+                SerialM.print(F("scanlineStrength = "));
+                SerialM.println((uint8_t)(f.read() - '0'));
                 SerialM.print(F("disable external clock generator = "));
                 SerialM.println((uint8_t)(f.read() - '0'));
+                if (f.available()) {
+                    SerialM.print(F("reverse OLED rotary = "));
+                    SerialM.println((uint8_t)(f.read() - '0'));
+                }
+                if (f.available()) {
+                    SerialM.print(F("tbc mode = "));
+                    SerialM.println((uint8_t)(f.read() - '0'));
+                }
+                if (f.available()) {
+                    SerialM.print(F("if auto offset = "));
+                    SerialM.println((uint8_t)(f.read() - '0'));
+                }
 
                 f.close();
             }
@@ -302,6 +354,10 @@ void handleType2Command(char argument)
                 }
                 GBS::PLL_MS::write(PLL_MS);
                 ResetSDRAM();
+                // persist override so the choice survives reboots/presets
+                // (helps boards that need a specific SDRAM clock vs banding)
+                uopt->sdramClock = PLL_MS;
+                saveUserPrefs();
                 if (memClock != 10) {
                     SerialM.print(F("SDRAM clock: "));
                     SerialM.print(memClock);
@@ -485,10 +541,11 @@ void handleType2Command(char argument)
             SerialM.println();
             break;
         case 'E':
-            // test option for now
             SerialM.print(F("IF Auto Offset: "));
             toggleIfAutoOffset();
-            if (GBS::IF_AUTO_OFST_EN::read()) {
+            uopt->ifAutoOffset = GBS::IF_AUTO_OFST_EN::read() ? 1 : 0;
+            saveUserPrefs();
+            if (uopt->ifAutoOffset) {
                 SerialM.println("on");
             } else {
                 SerialM.println("off");
@@ -632,6 +689,53 @@ void handleType2Command(char argument)
                 SerialM.println("YPbPr:defauit");
             }
             break;
+        case 'b': {
+            // dual-output boards (GBS-8220): toggle the 2nd sync output driver.
+            // Experiment: check whether port 2 loses sync (or vsync only).
+            uint8_t en = GBS::DAC_RGBS_S1EN::read();
+            GBS::DAC_RGBS_S1EN::write(!en);
+            SerialM.print(F("S1 sync out driver: "));
+            SerialM.println(!en ? F("on") : F("off"));
+        } break;
+        case 'c': {
+            // cycle output sync source, 0_4f bits 6-7 (VDS / HDBypass / SP).
+            // Experiment: changes the sync signal on both VGA outputs.
+            static uint8_t sel = 0;
+            sel = (sel + 1) & 3;
+            GBS::OUT_SYNC_SEL::write(sel);
+            SerialM.print(F("OUT_SYNC_SEL: "));
+            SerialM.println(sel);
+        } break;
+        case 'd': {
+            // "aperture grille" experiment: deliberate +/-1..2 offsets on
+            // VDS_HSCALE create periodic column brightness variation (vertical
+            // dark stripes) - the horizontal equivalent of what scanlines do
+            // with line interpolation. Cycle: +1, +2, -1, -2, normal.
+            static int8_t maskOff = 0;
+            static uint16_t hscaleBase = 0xffff;
+            static const int8_t offs[5] = {0, 1, 2, -1, -2};
+            maskOff = (maskOff + 1) % 5;
+            if (maskOff == 1 || hscaleBase == 0xffff) {
+                hscaleBase = GBS::VDS_HSCALE::read(); // capture preset's value
+            }
+            GBS::VDS_HSCALE::write((uint16_t)((int)hscaleBase + offs[maskOff]));
+            SerialM.print(F("mask moire off: "));
+            SerialM.print((int)offs[maskOff]);
+            SerialM.print(F(" hscale: 0x"));
+            SerialM.println(GBS::VDS_HSCALE::read(), HEX);
+        } break;
+        case 'Y': {
+            // composite-style chroma shift (color fringing, mask-like effect):
+            // cycles U delay, V delay, both, none
+            static uint8_t cm = 0;
+            cm = (cm + 1) & 3;
+            GBS::VDS_U_DELAY::write(cm & 1);
+            GBS::VDS_V_DELAY::write((cm >> 1) & 1);
+            SerialM.print(F("chroma shift (u,v): "));
+            SerialM.print(cm & 1);
+            SerialM.print(F(","));
+            SerialM.println((cm >> 1) & 1);
+        } break;
         default:
             break;
     }

@@ -465,7 +465,7 @@ FirmwareUpdater::UpdateStatus FirmwareUpdater::performUpdate(void (*progressCall
                     }
                 }
                 
-                if (written % (contentLength / 100) == 0) {
+                if (contentLength >= 100 && written % (contentLength / 100) == 0) {
 #ifdef ESP8266
                     ESP.wdtFeed();
 #endif

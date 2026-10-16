@@ -38,6 +38,10 @@ struct userOptions
     uint8_t enableCalibrationADC;
     uint8_t scanlineStrength;
     uint8_t reverseRotaryEncoderForOledMenu; // 0/1; default from REVERSE_ROTARY_ENCODER_FOR_OLED_MENU
+    uint8_t tbcMode;    // "TBC mode": relaxed sync processor tolerances for unstable sources (VHS etc.)
+    uint8_t ifAutoOffset; // persist IF auto offset enable (dev option)
+    uint8_t sdramClock;   // persisted PLL_MS override ('l' command); 0xff = use preset value
+    uint8_t peakingLevel; // 0=off, 1=normal, 2=strong, 3=max ('8' command; wantPeaking still gates)
 };
 
 
@@ -87,6 +91,10 @@ struct runTimeOptions
     bool isValidForScalingRGBHV;
     bool useHdmiSyncFix;
     bool extClockGenDetected;
+    // Neo Geo (MVS/AES) 264-line serration-less Csync gate latch, see updateSpDynamic()
+    bool neoGeoCsyncLatched;
+    // SP_H_PULSE_IGNOR was widened by TBC mode; allows updateSpDynamic() to shrink it back
+    bool tbcIgnoreWidened;
 };
 // remember adc options across presets
 struct adcOptions

@@ -144,6 +144,11 @@ class Si5351mcu {
         static uint8_t  i2cWriteBurst( uint8_t start_register, const uint8_t *data, uint8_t numbytes );
         static int16_t  i2cRead( uint8_t reg );
 
+        // Optional alternate I2C bus (e.g. Wire1 on ESP32 for boards with
+        // swapped SDA/SCL on the clockgen header: McBazel ODV GBS-C, fork #16)
+        static TwoWire *i2cBus;
+        static void setBus(TwoWire *bus) { if (bus != nullptr) i2cBus = bus; }
+
         inline bool isEnabled( const uint8_t channel ) {
           return channel < SICHANNELS && clkOn[ channel ] != 0;
         };

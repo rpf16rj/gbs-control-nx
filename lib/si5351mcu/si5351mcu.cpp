@@ -33,6 +33,10 @@
     #include "Wire.h"
 #endif
 
+// I2C bus used for all transactions; defaults to Wire, can be switched to
+// Wire1 (etc.) via Si5351mcu::setBus() for boards with swapped clockgen pins.
+TwoWire *Si5351mcu::i2cBus = &Wire;
+
 /*****************************************************************************
  * This is the default init procedure, it set the Si5351 with this params:
  * XTAL 27.000 Mhz
@@ -56,7 +60,7 @@
     // (pins/pullups/clock) and cause flaky or partial register programming in some setups.
     // The main firmware configures I2C explicitly via startWire(); rely on that.
 #ifndef ESP32
-    Wire.begin();
+    i2cBus->begin();
 #endif
 
     // shut off the spread spectrum by default, DWaite contibuted code
@@ -375,14 +379,14 @@ uint8_t Si5351mcu::i2cWriteBurst( const uint8_t start_register,
     // This method saves the massive overhead of having to keep opening
     // and closing the I2C bus for consecutive register writes.  It
     // also saves numbytes - 1 writes for register address selection.
-    Wire.beginTransmission(SIADDR);
+    i2cBus->beginTransmission(SIADDR);
 
-    Wire.write(start_register);
-    Wire.write(data, numbytes);
+    i2cBus->write(start_register);
+    i2cBus->write(data, numbytes);
     // All of the bytes queued up in the above write() calls are buffered
     // up and will be sent to the slave in one "burst", on the call to
     // endTransmission().  This also sends the I2C STOP to the Slave.
-    uint8_t rc = Wire.endTransmission();
+    uint8_t rc = i2cBus->endTransmission();
     return rc;
     // returns non zero on error
 }
@@ -403,13 +407,13 @@ void Si5351mcu::i2cWrite( const uint8_t regist, const uint8_t value) {
 int16_t  Si5351mcu::i2cRead( const uint8_t regist ) {
     int value;
 
-    Wire.beginTransmission(SIADDR);
-    Wire.write(regist);
-    Wire.endTransmission();
+    i2cBus->beginTransmission(SIADDR);
+    i2cBus->write(regist);
+    i2cBus->endTransmission();
 
-    Wire.requestFrom(SIADDR, 1);
-    if ( Wire.available() ) {
-      value = Wire.read();
+    i2cBus->requestFrom(SIADDR, 1);
+    if ( i2cBus->available() ) {
+      value = i2cBus->read();
     }
     else {
       value = -1;   // "EOF" in C

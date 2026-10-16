@@ -36,6 +36,10 @@ void loadDefaultUserOptions()
     uopt->disableExternalClockGenerator = 0; // #19
     uopt->reverseRotaryEncoderForOledMenu =
         REVERSE_ROTARY_ENCODER_FOR_OLED_MENU > 0 ? 1 : 0; // #20 default from build-time macro
+    uopt->tbcMode = 0;       // #21
+    uopt->ifAutoOffset = 0;  // #22
+    uopt->sdramClock = 0xff; // #23 (0xff = preset default)
+    uopt->peakingLevel = 1;  // #24
     syncReverseRotaryEncoderIsrMirror();
 }
 
@@ -66,6 +70,10 @@ void saveUserPrefs()
     f.write(uopt->scanlineStrength + '0');              // #18
     f.write(uopt->disableExternalClockGenerator + '0'); // #19
     f.write(uopt->reverseRotaryEncoderForOledMenu + '0'); // #20
+    f.write(uopt->tbcMode + '0');    // #21
+    f.write(uopt->ifAutoOffset + '0'); // #22
+    f.write(uopt->sdramClock);       // #23 raw byte (values 0-7 or 0xff)
+    f.write(uopt->peakingLevel + '0'); // #24
 
     f.close();
     syncReverseRotaryEncoderIsrMirror();

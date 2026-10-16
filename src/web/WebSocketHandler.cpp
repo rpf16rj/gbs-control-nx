@@ -47,7 +47,13 @@ void updateWebSocketData()
                     break;
             }
 
-            toSend[2] = (char)uopt->presetSlot;
+            // Sanitize: an out-of-map slot byte makes the text frame invalid
+            // UTF-8 and the web UI then shows every toggle off (upstream #323).
+            char slotChar = (char)uopt->presetSlot;
+            if (slotIndexMap.indexOf(slotChar) < 0) {
+                slotChar = 'A';
+            }
+            toSend[2] = slotChar;
 
             // '@' = 0x40, used for "byte is present" detection; 0x80 not in ascii table
             toSend[3] = '@';

@@ -82,7 +82,9 @@ private:
         this->display->setFont(ArialMT_Plain_10);
         this->display->drawString(0, 0, msg);
         this->display->display();
-        while (1);
+        // Previously: while(1) hang -> watchdog reset on ESP8266 (SW WDT) and a
+        // dead ESP32. Disable the menu and keep the firmware alive instead.
+        this->disabled = true;
     }
 
     void drawScreenSaver()

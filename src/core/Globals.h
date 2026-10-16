@@ -93,9 +93,7 @@ enum PresetID : uint8_t {
 
 // Serial commands
 extern char serialCommand;
-extern String serialCommandBuffer;
 extern char userCommand;
-extern String userCommandBuffer;
 
 // Other global variables
 extern String slotIndexMap;

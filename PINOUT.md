@@ -16,4 +16,5 @@ This document outlines the pin connections for both ESP8266 and ESP32 platforms.
 | **Encoder DT** | D7 (GPIO13) | GPIO32 | Rotary Encoder Data (B) |
 | **Encoder SW** | D3 (GPIO0) | GPIO14 | Rotary Encoder Switch |
 | **DebugPin** | D6 (GPIO12) | GPIO27 | Input Sync Detection (Debug) |
+| **IR Receiver** (opt.) | D4 (GPIO2) | GPIO19 | `gbsc_*_ir` envs only; NEC remote, see `src/hardware/IRRemote.cpp` |
 

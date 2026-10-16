@@ -27,8 +27,17 @@ extern SerialMirror SerialM;
 // Notes:
 // - GPIO.in covers 0-31
 // - GPIO.in1 covers 32-39
+// - ESP32-C3 and later RISC-V variants expose GPIO.in as a union -> use .val
 static inline uint32_t fastDigitalRead(uint8_t pin)
 {
+#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32C2) || \
+    defined(CONFIG_IDF_TARGET_ESP32C6) || defined(CONFIG_IDF_TARGET_ESP32H2) || \
+    defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32S2)
+    if (pin < 32) {
+        return (GPIO.in.val >> pin) & 1U;
+    }
+    return 0; // single 32-bit bank on these targets
+#else
     if (pin < 32) {
         return (GPIO.in >> pin) & 1U;
     }
@@ -37,6 +46,7 @@ static inline uint32_t fastDigitalRead(uint8_t pin)
     }
     // Invalid on classic ESP32 (WROOM/WROVER): return 0 for out-of-range pins.
     return 0;
+#endif
 }
 #define digitalRead(x) fastDigitalRead((uint8_t)(x))
 #else // Arduino

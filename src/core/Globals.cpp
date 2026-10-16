@@ -1,6 +1,7 @@
 #include "Globals.h"
 #include "../config/Config.h"
 #include "../config/WiFiConfig.h"
+#include "../commands/CommandQueue.h"
 
 // Global object instances
 SSD1306Wire display(0x3c, SDA_PIN, SCL_PIN); //inits I2C address & pins for OLED
@@ -51,10 +52,10 @@ struct adcOptions *adco = &adcopts;
 
 String slotIndexMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~()!*:,";
 
-char serialCommand;               // Serial / Web Server commands
-String serialCommandBuffer = "";  // Buffering for Web Server commands
-char userCommand;               // Serial / Web Server commands
-String userCommandBuffer = "";  // Buffering for Web Server commands
+char serialCommand; // Serial / Web Server commands
+char userCommand;   // Serial / Web Server commands
+CommandQueue serialCommandQueue; // filled by /sc web handler (async context)
+CommandQueue userCommandQueue;   // filled by /uc web handler (async context)
 // lastSegment is defined in src/gbs/GBSRegister.cpp
 
 // Best observed Si5351 XTAL load capacitance setting from detection/init.

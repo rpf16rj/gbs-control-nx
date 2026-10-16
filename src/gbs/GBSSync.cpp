@@ -83,6 +83,7 @@ void setResetParameters()
     rto->osr = 0;
     rto->useHdmiSyncFix = 0;
     rto->notRecognizedCounter = 0;
+    rto->neoGeoCsyncLatched = false;
 
     adco->r_gain = 0;
     adco->g_gain = 0;

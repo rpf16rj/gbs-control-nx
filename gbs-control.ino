@@ -79,6 +79,7 @@
 #include "src/clock/Si5351Manager.h"
 
 // Project headers - src/commands
+#include "src/commands/CommandQueue.h"
 #include "src/commands/SerialCommandHandler.h"
 #include "src/commands/UserCommandHandler.h"
 
@@ -97,6 +98,7 @@
 #include "src/hardware/I2CManager.h"
 #include "src/hardware/LEDControl.h"
 #include "src/hardware/RotaryEncoder.h"
+#include "src/hardware/IRRemote.h"
 
 // Project headers - src/menu
 #include "src/menu/OLEDMenu.h"
@@ -225,6 +227,11 @@ void setup()
 #endif
 
     SerialM.println(F("\nstartup"));
+    SerialM.print(F("firmware: "));
+    SerialM.println(FIRMWARE_VERSION);
+#ifdef HAVE_IR_REMOTE
+    initIRRemote();
+#endif
 
     loadDefaultUserOptions();
     //globalDelay = 0;
@@ -330,6 +337,12 @@ void setup()
                 uopt->enableFrameTimeLock = 0;
 
             uopt->presetSlot = lowByte(f.read());
+            // f.read() yields -1 (0xFF) at EOF on short/old prefs files; an invalid
+            // slot byte corrupts the WS status frame (invalid UTF-8 -> all toggles
+            // show off, slot highlight lost. upstream #323/#422)
+            if (slotIndexMap.indexOf((char)uopt->presetSlot) < 0) {
+                uopt->presetSlot = 'A';
+            }
 
             uopt->frameTimeLockMethod = (uint8_t)(f.read() - '0');
             if (uopt->frameTimeLockMethod > 1)
@@ -389,7 +402,7 @@ void setup()
 
             uopt->scanlineStrength = (uint8_t)(f.read() - '0'); // #18
             if (uopt->scanlineStrength > 0x60)
-                uopt->enableCalibrationADC = 0x30;
+                uopt->scanlineStrength = 0x30; // was: wrongly wrote enableCalibrationADC
 
             uopt->disableExternalClockGenerator = (uint8_t)(f.read() - '0'); // #19
             if (uopt->disableExternalClockGenerator > 1)
@@ -402,6 +415,38 @@ void setup()
             } else {
                 uopt->reverseRotaryEncoderForOledMenu =
                     REVERSE_ROTARY_ENCODER_FOR_OLED_MENU > 0 ? 1 : 0;
+            }
+
+            if (f.available()) {
+                uopt->tbcMode = (uint8_t)(f.read() - '0'); // #21
+                if (uopt->tbcMode > 1)
+                    uopt->tbcMode = 0;
+            } else {
+                uopt->tbcMode = 0;
+            }
+
+            if (f.available()) {
+                uopt->ifAutoOffset = (uint8_t)(f.read() - '0'); // #22
+                if (uopt->ifAutoOffset > 1)
+                    uopt->ifAutoOffset = 0;
+            } else {
+                uopt->ifAutoOffset = 0;
+            }
+
+            if (f.available()) {
+                uopt->sdramClock = (uint8_t)f.read(); // #23 raw byte
+                if (uopt->sdramClock > 7 && uopt->sdramClock != 0xff)
+                    uopt->sdramClock = 0xff;
+            } else {
+                uopt->sdramClock = 0xff;
+            }
+
+            if (f.available()) {
+                uopt->peakingLevel = (uint8_t)(f.read() - '0'); // #24
+                if (uopt->peakingLevel > 3)
+                    uopt->peakingLevel = 1;
+            } else {
+                uopt->peakingLevel = 1;
             }
 
             f.close();
@@ -560,6 +605,8 @@ void loop()
     static unsigned long lastTimeInterruptClear = millis();
 
 #if HAVE_BUTTONS
+    // NOTE: handleButtons()/buttonPollInterval are not implemented in this
+    // fork. Enable at your own risk after providing them.
     static unsigned long lastButton = micros();
     if (micros() - lastButton > buttonPollInterval) {
         lastButton = micros();
@@ -585,18 +632,31 @@ void loop()
 
     handleWiFi(0); // WiFi + OTA + WS + MDNS, checks for server enabled + started
 
+#ifdef HAVE_IR_REMOTE
+    pollIRRemote();
+#endif
+
+    // refresh cached telemetry for /api/v1/status (loop owns the I2C bus)
+    static uint32_t lastApiTelemetry = 0;
+    if (rto->webServerStarted && (millis() - lastApiTelemetry) > 800) {
+        lastApiTelemetry = millis();
+        updateApiTelemetry();
+    }
+
     // is there a command from Terminal or web ui?
     // Serial takes precedence
     if (Serial.available()) {
         serialCommand = Serial.read();
-    } else if (serialCommandBuffer.length() > 0) {
-        serialCommand = serialCommandBuffer.charAt(0);
-        serialCommandBuffer.remove(0, 1);
-    } else if (inputStage > 0) {
-        // multistage with no more data
-        SerialM.println(F(" abort"));
-        discardSerialRxData();
-        serialCommand = ' ';
+    } else {
+        char queuedCmd;
+        if (serialCommandQueue.pop(queuedCmd)) {
+            serialCommand = queuedCmd;
+        } else if (inputStage > 0) {
+            // multistage with no more data
+            SerialM.println(F(" abort"));
+            discardSerialRxData();
+            serialCommand = ' ';
+        }
     }
     if (serialCommand != '@') {
         // multistage with bad characters?
@@ -1469,9 +1529,11 @@ void loop()
         }
     }
 
-    if (userCommand == '@' && userCommandBuffer.length() > 0) {
-        userCommand = userCommandBuffer.charAt(0);
-        userCommandBuffer.remove(0, 1);
+    if (userCommand == '@') {
+        char queuedCmd;
+        if (userCommandQueue.pop(queuedCmd)) {
+            userCommand = queuedCmd;
+        }
     }
 
     if (userCommand != '@') {
@@ -1618,7 +1680,9 @@ void loop()
                 GBS::SP_NO_CLAMP_REG::write(0); // 5_57 0
             }
 
-            if (rto->extClockGenDetected && !uopt->disableExternalClockGenerator && rto->videoStandardInput != 14) {
+            // PalForce60 needs in/out rate mismatch; external clock sync would undo it (upstream #237)
+            if (rto->extClockGenDetected && !uopt->disableExternalClockGenerator && rto->videoStandardInput != 14 &&
+                !rto->presetIsPalForce60) {
                 // Use external clock if detected and enabled in options
                 if (!rto->outModeHdBypass) {
                     if (GBS::PLL648_CONTROL_01::read() != 0x75) {

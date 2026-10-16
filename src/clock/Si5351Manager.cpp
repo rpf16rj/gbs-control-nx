@@ -6,8 +6,15 @@
 #include "../gbs/tv5725.h"
 #include "../video/framesync.h"
 #include "../../lib/si5351mcu/si5351mcu.h"
+#include "../config/Config.h"
 
 typedef TV5725<GBS_ADDR> GBS;
+
+// I2C bus used for all Si5351 transactions in this file.
+// Some McBazel ODV GBS-C revisions wire the clockgen header with SDA/SCL
+// swapped (fork #16 / upstream #657). On ESP32 we detect that at init and
+// transparently switch to Wire1 on the crossed pins.
+static TwoWire *siBus = &Wire;
 
 void externalClockGenResetClock()
 {
@@ -17,18 +24,18 @@ void externalClockGenResetClock()
     fsDebugPrintf("externalClockGenResetClock()\n");
 
     auto readSi5351Reg = [](uint8_t reg) -> int {
-        Wire.beginTransmission(SIADDR);
-        Wire.write(reg);
-        if (Wire.endTransmission() != 0) return -1;
-        size_t n = Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
+        siBus->beginTransmission(SIADDR);
+        siBus->write(reg);
+        if (siBus->endTransmission() != 0) return -1;
+        size_t n = siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
         if (n != 1) return -2;
-        return Wire.read();
+        return siBus->read();
     };
     auto writeSi5351Reg = [](uint8_t reg, uint8_t val) -> bool {
-        Wire.beginTransmission(SIADDR);
-        Wire.write(reg);
-        Wire.write(val);
-        return Wire.endTransmission() == 0;
+        siBus->beginTransmission(SIADDR);
+        siBus->write(reg);
+        siBus->write(val);
+        return siBus->endTransmission() == 0;
     };
     auto waitSi5351Lock = [&](const char *where) -> bool {
         uint32_t t0 = millis();
@@ -138,6 +145,11 @@ void externalClockGenSyncInOutRate()
     if (!rto->extClockGenDetected) {
         return;
     }
+    // PAL-forced-60Hz intentionally runs in/out at different rates (50->60Hz).
+    // Syncing the output clock to the source rate would undo that (upstream #237).
+    if (rto->presetIsPalForce60) {
+        return;
+    }
     if (GBS::PAD_CKIN_ENZ::read() != 0) {
         return;
     }
@@ -223,19 +235,19 @@ void externalClockGenDetectAndInitialize()
     int st_pre = -999, st_pre2 = -999;
     int et0 = -999; // endTransmission return
     int n0 = -999;  // bytes read
-    Wire.beginTransmission(SIADDR);
-    Wire.write(0x00);
-    et0 = Wire.endTransmission();
+    siBus->beginTransmission(SIADDR);
+    siBus->write(0x00);
+    et0 = siBus->endTransmission();
     if (et0 == 0) {
-        n0 = (int)Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
-        if (n0 == 1) st_pre = Wire.read();
+        n0 = (int)siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
+        if (n0 == 1) st_pre = siBus->read();
     }
     // read twice to detect flaky bus
-    Wire.beginTransmission(SIADDR);
-    Wire.write(0x00);
-    if (Wire.endTransmission() == 0) {
-        int n1 = (int)Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
-        if (n1 == 1) st_pre2 = Wire.read();
+    siBus->beginTransmission(SIADDR);
+    siBus->write(0x00);
+    if (siBus->endTransmission() == 0) {
+        int n1 = (int)siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
+        if (n1 == 1) st_pre2 = siBus->read();
     }
     (void)st_pre;
     (void)st_pre2;
@@ -248,20 +260,40 @@ void externalClockGenDetectAndInitialize()
     }
 
     uint8_t retVal = 0;
-    Wire.beginTransmission(SIADDR);
-    retVal = Wire.endTransmission();
+    siBus->beginTransmission(SIADDR);
+    retVal = siBus->endTransmission();
 
     if (retVal != 0) {
-        return;
+#if defined(ESP32) && !defined(CONFIG_IDF_TARGET_ESP32C3)
+        // Si5351 not answering on the primary bus: some McBazel ODV GBS-C
+        // boards have the clockgen header wired with SDA/SCL swapped.
+        // Probe a second I2C controller on the crossed pins.
+        // (Wire1 SDA on the SCL pin, SCL on the SDA pin.)
+        // ESP32-C3 has a single I2C peripheral, so this is skipped there.
+        Wire1.begin(SCL_PIN, SDA_PIN);
+        Wire1.setClock(400000);
+        Wire1.beginTransmission(SIADDR);
+        if (Wire1.endTransmission() == 0) {
+            SerialM.println(F("clockgen found on swapped I2C pins (ODV?) -> using Wire1"));
+            siBus = &Wire1;
+            Si.setBus(&Wire1);
+            retVal = 0;
+        } else {
+            Wire1.end();
+        }
+#endif
+        if (retVal != 0) {
+            return;
+        }
     }
 
-    Wire.beginTransmission(SIADDR);
-    Wire.write(0); // Device Status
-    Wire.endTransmission();
-    size_t bytes_read = Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
+    siBus->beginTransmission(SIADDR);
+    siBus->write(0); // Device Status
+    siBus->endTransmission();
+    size_t bytes_read = siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
 
     if (bytes_read == 1) {
-        retVal = Wire.read();
+        retVal = siBus->read();
         if ((retVal & 0x80) == 0) {
             // SYS_INIT indicates device is ready.
             rto->extClockGenDetected = 1;
@@ -273,18 +305,18 @@ void externalClockGenDetectAndInitialize()
     }
 
     auto readSt = []() -> int {
-        Wire.beginTransmission(SIADDR);
-        Wire.write(0x00);
-        if (Wire.endTransmission() != 0) return -1;
-        int n = (int)Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
+        siBus->beginTransmission(SIADDR);
+        siBus->write(0x00);
+        if (siBus->endTransmission() != 0) return -1;
+        int n = (int)siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
         if (n != 1) return -2;
-        return Wire.read();
+        return siBus->read();
     };
     auto clearInt = []() -> bool {
-        Wire.beginTransmission(SIADDR);
-        Wire.write(0x01); // interrupt status (sticky)
-        Wire.write(0xFF); // clear all
-        return Wire.endTransmission() == 0;
+        siBus->beginTransmission(SIADDR);
+        siBus->write(0x01); // interrupt status (sticky)
+        siBus->write(0xFF); // clear all
+        return siBus->endTransmission() == 0;
     };
     auto isLockedSt = [](int st) -> bool {
         // We only use CLK0 (PLLA) in this firmware; ignore LOLB (PLLB) for lock.
@@ -302,12 +334,12 @@ void externalClockGenDetectAndInitialize()
         return st;
     };
     auto readRegs = [](uint8_t startReg, uint8_t count, uint8_t *out) -> bool {
-        Wire.beginTransmission(SIADDR);
-        Wire.write(startReg);
-        if (Wire.endTransmission() != 0) return false;
-        int n = (int)Wire.requestFrom((uint8_t)SIADDR, (size_t)count, false);
+        siBus->beginTransmission(SIADDR);
+        siBus->write(startReg);
+        if (siBus->endTransmission() != 0) return false;
+        int n = (int)siBus->requestFrom((uint8_t)SIADDR, (size_t)count, false);
         if (n != (int)count) return false;
-        for (uint8_t i = 0; i < count; i++) out[i] = (uint8_t)Wire.read();
+        for (uint8_t i = 0; i < count; i++) out[i] = (uint8_t)siBus->read();
         return true;
     };
 
@@ -335,10 +367,10 @@ void externalClockGenDetectAndInitialize()
     for (uint8_t t = 0; t < 3; t++) {
         uint8_t xtal_cl = xtal_cls[t];
         Si.init(xtal);
-        Wire.beginTransmission(SIADDR);
-        Wire.write(183); // XTAL_CL
-        Wire.write(xtal_cl);
-        Wire.endTransmission();
+        siBus->beginTransmission(SIADDR);
+        siBus->write(183); // XTAL_CL
+        siBus->write(xtal_cl);
+        siBus->endTransmission();
         Si.setPower(0, SIOUT_6mA);
         Si.setFreq(0, rto->freqExtClockGen);
         Si.enable(0);
@@ -354,17 +386,17 @@ void externalClockGenDetectAndInitialize()
         bool msOk = readRegs(42, 8, ms0);   // MS0 params (regs 42..49)
         // Also read OE/CLK0 control for sanity.
         int oe = -999, clk0 = -999;
-        Wire.beginTransmission(SIADDR);
-        Wire.write(0x03);
-        if (Wire.endTransmission() == 0) {
-            int n = (int)Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
-            if (n == 1) oe = Wire.read();
+        siBus->beginTransmission(SIADDR);
+        siBus->write(0x03);
+        if (siBus->endTransmission() == 0) {
+            int n = (int)siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
+            if (n == 1) oe = siBus->read();
         }
-        Wire.beginTransmission(SIADDR);
-        Wire.write(0x10);
-        if (Wire.endTransmission() == 0) {
-            int n = (int)Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
-            if (n == 1) clk0 = Wire.read();
+        siBus->beginTransmission(SIADDR);
+        siBus->write(0x10);
+        if (siBus->endTransmission() == 0) {
+            int n = (int)siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
+            if (n == 1) clk0 = siBus->read();
         }
 
         Si.disable(0);
@@ -394,18 +426,18 @@ void externalClockGenDetectAndInitialize()
 
     int st_post = -999, st_post2 = -999;
     int etp0 = -999, np0 = -999;
-    Wire.beginTransmission(SIADDR);
-    Wire.write(0x00);
-    etp0 = Wire.endTransmission();
+    siBus->beginTransmission(SIADDR);
+    siBus->write(0x00);
+    etp0 = siBus->endTransmission();
     if (etp0 == 0) {
-        np0 = (int)Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
-        if (np0 == 1) st_post = Wire.read();
+        np0 = (int)siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
+        if (np0 == 1) st_post = siBus->read();
     }
-    Wire.beginTransmission(SIADDR);
-    Wire.write(0x00);
-    if (Wire.endTransmission() == 0) {
-        int np1 = (int)Wire.requestFrom((uint8_t)SIADDR, (size_t)1, false);
-        if (np1 == 1) st_post2 = Wire.read();
+    siBus->beginTransmission(SIADDR);
+    siBus->write(0x00);
+    if (siBus->endTransmission() == 0) {
+        int np1 = (int)siBus->requestFrom((uint8_t)SIADDR, (size_t)1, false);
+        if (np1 == 1) st_post2 = siBus->read();
     }
     (void)st_post;
     (void)st_post2;

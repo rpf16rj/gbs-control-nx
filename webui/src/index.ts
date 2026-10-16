@@ -1403,6 +1403,31 @@ const gbsPrompt = (text: string, defaultValue = "") => {
   });
 };
 
+const updateStatusInfo = () => {
+  fetch(`/api/v1/status?${+new Date()}`)
+    .then((r) => r.json())
+    .then((s) => {
+      const el = document.getElementById("gbsInfoText");
+      if (!el) {
+        return;
+      }
+      el.textContent = [
+        `fw ${s.fw}    ip ${s.ip}`,
+        `mode ${s.video_mode}    preset ${s.preset_slot}    pref ${s.preset_pref}`,
+        `in: ${s.in_htotal} x ${s.in_vtotal}    ${s.src_hz} Hz`,
+        `pll div ${s.pll_divider}    lock ${s.pll_locked}`,
+        `phase sp ${s.phase_sp}    adc ${s.phase_adc}    sog ${s.sog_level}`,
+        `ftl ${s.frame_time_lock}    tbc ${s.tbc_mode}    heap ${s.heap}`,
+      ].join("\n");
+    })
+    .catch(() => {});
+};
+
+const initStatusPolling = () => {
+  updateStatusInfo();
+  setInterval(updateStatusInfo, 3000);
+};
+
 const initUI = () => {
   updateCustomSlotFilters();
   initGeneralListeners();
@@ -1416,6 +1441,7 @@ const initUI = () => {
   initUnloadListener();
   initDeveloperMode();
   initHelp();
+  initStatusPolling();
 };
 
 const main = () => {
