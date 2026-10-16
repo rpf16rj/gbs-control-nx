@@ -10,7 +10,6 @@
 #include "../core/slot.h"
 #include "../gbs/tv5725.h"
 #include "../gbs/GBSController.h"
-#include "../commands/UserCommandHandler.h"
 #include <LittleFS.h>
 #include <ArduinoOTA.h>
 #ifdef ESP8266
@@ -137,7 +136,6 @@ void updateApiTelemetry()
             apiTel.srcHz = getSourceFieldRate(0);
         }
     }
-    cropMemFlush(); // persist delayed crop-mem writes here
 }
 
 void startWebserver()

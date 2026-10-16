@@ -1,5 +1,4 @@
 #include "GBSController.h"
-#include "../commands/UserCommandHandler.h"
 #include "../core/Globals.h"
 #include "../web/SerialMirror.h"
 #include "../gbs/GBSPresets.h"
@@ -1257,10 +1256,6 @@ void doPostPresetLoadSteps()
     if (rto->crispMode) { // crisp macro wins over individual fx/peaking
         applyCrispMode(1);
     }
-
-    // re-apply remembered crop for this input mode (before the EXT window
-    // copy below, so both stay in sync)
-    cropMemApply();
     /*if (uopt->wantTap6) { GBS::VDS_TAP6_BYPS::write(0); }
   else {
     GBS::VDS_TAP6_BYPS::write(1);

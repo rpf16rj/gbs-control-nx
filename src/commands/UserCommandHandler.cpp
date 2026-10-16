@@ -24,99 +24,6 @@
 
 typedef TV5725<GBS_ADDR> GBS;
 
-// --- auto crop memory -------------------------------------------------
-// The TV5725 exposes no pixel readout, so content-aware crop is
-// impossible. Instead we remember the display window the user tuned for
-// each detected input mode and reapply it when that mode comes back.
-struct CropMemEntry {
-    uint16_t hst, hsp, vst, vsp;
-};
-static CropMemEntry cropMem[9];
-static uint8_t cropMemValid = 0; // bitmask over entries
-static uint8_t cropMemLoaded = 0;
-static uint32_t cropMemDirtySince = 0;
-
-static uint8_t cropMemModeIndex()
-{
-    switch (rto->videoStandardInput) {
-        case 1: return 0;   // NTSC SD
-        case 2: return 1;   // PAL SD
-        case 3: return 2;   // NTSC 480p
-        case 4: return 3;   // PAL 576p
-        case 5: return 4;   // 720p
-        case 6: return 5;   // 1080p
-        case 8: return 6;   // medium res
-        case 14: return 7;  // vga upscale
-        case 0: return 8;   // unknown
-        default: return 0xff;
-    }
-}
-
-static void cropMemLoad()
-{
-    if (cropMemLoaded) {
-        return;
-    }
-    cropMemLoaded = 1;
-    File f = LittleFS.open("/cropmem.bin", "r");
-    if (!f) {
-        return;
-    }
-    uint8_t valid = 0;
-    if (f.read(&valid, 1) == 1 &&
-        f.read((uint8_t *)cropMem, sizeof(cropMem)) == sizeof(cropMem)) {
-        cropMemValid = valid;
-    }
-    f.close();
-}
-
-static void cropMemUpdate()
-{
-    cropMemLoad();
-    uint8_t idx = cropMemModeIndex();
-    if (idx == 0xff) {
-        return;
-    }
-    cropMem[idx].hst = GBS::VDS_DIS_HB_ST::read();
-    cropMem[idx].hsp = GBS::VDS_DIS_HB_SP::read();
-    cropMem[idx].vst = GBS::VDS_DIS_VB_ST::read();
-    cropMem[idx].vsp = GBS::VDS_DIS_VB_SP::read();
-    cropMemValid |= (1 << idx);
-    cropMemDirtySince = millis();
-}
-
-void cropMemApply()
-{
-    cropMemLoad();
-    uint8_t idx = cropMemModeIndex();
-    if (idx == 0xff || !(cropMemValid & (1 << idx))) {
-        return;
-    }
-    GBS::VDS_DIS_HB_ST::write(cropMem[idx].hst);
-    GBS::VDS_DIS_HB_SP::write(cropMem[idx].hsp);
-    GBS::VDS_DIS_VB_ST::write(cropMem[idx].vst);
-    GBS::VDS_DIS_VB_SP::write(cropMem[idx].vsp);
-    SerialM.printf("crop mem applied: h %u..%u v %u..%u\n",
-                   cropMem[idx].hst, cropMem[idx].hsp,
-                   cropMem[idx].vst, cropMem[idx].vsp);
-}
-
-void cropMemFlush()
-{
-    if (!cropMemDirtySince || millis() - cropMemDirtySince < 2000) {
-        return;
-    }
-    File f = LittleFS.open("/cropmem.bin", "w");
-    if (!f) {
-        return;
-    }
-    f.write(cropMemValid);
-    f.write((const uint8_t *)cropMem, sizeof(cropMem));
-    f.close();
-    cropMemDirtySince = 0;
-    SerialM.println(F("crop mem saved"));
-}
-
 static void setFrameTimeLockMethod(uint8_t method)
 {
     if (uopt->frameTimeLockMethod == method) {
@@ -493,7 +400,6 @@ void handleType2Command(char argument)
             if ((hbstd > 4) && (hbspd < (htotal - 4))) {
                 GBS::VDS_DIS_HB_ST::write(GBS::VDS_DIS_HB_ST::read() - 4);
                 GBS::VDS_DIS_HB_SP::write(GBS::VDS_DIS_HB_SP::read() + 4);
-                cropMemUpdate();
             } else {
                 SerialM.println("limit");
             }
@@ -505,7 +411,6 @@ void handleType2Command(char argument)
             if ((hbstd < (htotal - 4)) && (hbspd > 4)) {
                 GBS::VDS_DIS_HB_ST::write(GBS::VDS_DIS_HB_ST::read() + 4);
                 GBS::VDS_DIS_HB_SP::write(GBS::VDS_DIS_HB_SP::read() - 4);
-                cropMemUpdate();
             } else {
                 SerialM.println("limit");
             }
@@ -518,7 +423,6 @@ void handleType2Command(char argument)
             if ((vbstd > 6) && (vbspd < (vtotal - 4))) {
                 GBS::VDS_DIS_VB_ST::write(vbstd - 2);
                 GBS::VDS_DIS_VB_SP::write(vbspd + 2);
-                cropMemUpdate();
             } else {
                 SerialM.println("limit");
             }
@@ -531,7 +435,6 @@ void handleType2Command(char argument)
             if ((vbstd < (vtotal - 4)) && (vbspd > 6)) {
                 GBS::VDS_DIS_VB_ST::write(vbstd + 2);
                 GBS::VDS_DIS_VB_SP::write(vbspd - 2);
-                cropMemUpdate();
             } else {
                 SerialM.println("limit");
             }
@@ -838,7 +741,6 @@ void handleType2Command(char argument)
             if (st > 4 && sp > 4) {
                 GBS::VDS_DIS_HB_ST::write(st - 4);
                 GBS::VDS_DIS_HB_SP::write(sp - 4);
-                cropMemUpdate();
             } else {
                 SerialM.println("limit");
             }
@@ -850,7 +752,6 @@ void handleType2Command(char argument)
             if (st < htotal - 4 && sp < htotal - 4) {
                 GBS::VDS_DIS_HB_ST::write(st + 4);
                 GBS::VDS_DIS_HB_SP::write(sp + 4);
-                cropMemUpdate();
             } else {
                 SerialM.println("limit");
             }
@@ -861,7 +762,6 @@ void handleType2Command(char argument)
             if (st > 4 && sp > 4) {
                 GBS::VDS_DIS_VB_ST::write(st - 2);
                 GBS::VDS_DIS_VB_SP::write(sp - 2);
-                cropMemUpdate();
             } else {
                 SerialM.println("limit");
             }
@@ -873,7 +773,6 @@ void handleType2Command(char argument)
             if (st < vtotal - 4 && sp < vtotal - 4) {
                 GBS::VDS_DIS_VB_ST::write(st + 2);
                 GBS::VDS_DIS_VB_SP::write(sp + 2);
-                cropMemUpdate();
             } else {
                 SerialM.println("limit");
             }
@@ -998,18 +897,6 @@ void handleType2Command(char argument)
             GBS::VDS_STEP_GAIN::write(sg[sgIdx]);
             SerialM.print(F("step gain: 0x"));
             SerialM.println(sg[sgIdx], HEX);
-        } break;
-        case '[': {
-            // forget remembered crop for the current input mode
-            cropMemLoad();
-            uint8_t idx = cropMemModeIndex();
-            if (idx != 0xff && (cropMemValid & (1 << idx))) {
-                cropMemValid &= ~(1 << idx);
-                cropMemDirtySince = millis();
-                SerialM.println(F("crop mem cleared for this mode"));
-            } else {
-                SerialM.println(F("no crop mem for this mode"));
-            }
         } break;
         case '<': {
             // peaking coring on all 5 bands: higher values sharpen only
