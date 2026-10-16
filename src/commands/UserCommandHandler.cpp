@@ -781,27 +781,40 @@ void handleType2Command(char argument)
             // SVM (scan velocity modulation): analog-domain edge emphasis,
             // the trick CRTs used for "bright crisp" edges. The chip powers
             // it (DAC_RGBS_SPD=0) but the firmware never sets a gain.
+            // SVM needs a non-zero VCLK delay or the modulation has nothing
+            // to act on (that's why gain alone showed no visible effect).
             // Cycle: off -> 0x40 -> 0x80 -> 0xC0
             static const uint8_t svmGains[4] = {0x00, 0x40, 0x80, 0xC0};
             static uint8_t svmIdx = 0;
             svmIdx = (svmIdx + 1) & 3;
+            rto->svmGain = svmGains[svmIdx];
+            uint8_t on = rto->svmGain != 0;
             GBS::DAC_RGBS_SPD::write(0); // keep SVM powered
-            GBS::VDS_SVM_GAIN::write(svmGains[svmIdx]);
-            GBS::VDS_SVM_2ND_BYPS::write(svmGains[svmIdx] ? 0 : 1);
+            GBS::VDS_SVM_GAIN::write(rto->svmGain);
+            GBS::VDS_SVM_2ND_BYPS::write(on ? 0 : 1);
+            GBS::VDS_SVM_VCLK_DELAY::write(on ? 4 : 0);
+            GBS::VDS_SVM_OFFSET::write(on ? 0x20 : 0);
             SerialM.print(F("SVM gain: 0x"));
-            SerialM.println(svmGains[svmIdx], HEX);
+            SerialM.println(rto->svmGain, HEX);
         } break;
         case '!': {
-            // VDS interpolator bypass cycle: none -> RGB stage -> YUV stage -> both.
-            // Bypassing stage interpolators sharpens pixel edges (less filtering).
+            // Real scaler-filter bypass: VDS_TAP6_BYPS (3_24 bit3) disables the
+            // 6-tap scaling filter -> hard pixel edges. The input-path
+            // interpolators (3_40) show no visible effect, but we cycle them
+            // too for completeness. Preset reapply resets TAP6 - restore via
+            // rto->interpBypass.
+            static const uint8_t ibStates[4] = {0, 1, 3, 3};
             static uint8_t ib = 0;
             ib = (ib + 1) & 3;
-            GBS::VDS_1ST_INT_BYPS::write(ib & 1);
-            GBS::VDS_2ND_INT_BYPS::write((ib >> 1) & 1);
-            SerialM.print(F("interp bypass (rgb,yuv): "));
-            SerialM.print(ib & 1);
-            SerialM.print(",");
-            SerialM.println((ib >> 1) & 1);
+            rto->interpBypass = ibStates[ib] & 1;
+            GBS::VDS_TAP6_BYPS::write(rto->interpBypass);
+            // delay compensation copied from 't' (tap6 toggle)
+            GBS::MADPT_Y_DELAY_UV_DELAY::write(
+                GBS::MADPT_Y_DELAY_UV_DELAY::read() + (rto->interpBypass ? 1 : -1));
+            GBS::VDS_1ST_INT_BYPS::write(ibStates[ib] & 1);
+            GBS::VDS_2ND_INT_BYPS::write((ibStates[ib] >> 1) & 1);
+            SerialM.print(F("interp bypass: "));
+            SerialM.println(rto->interpBypass ? F("on (tap6)") : F("off"));
         } break;
         default:
             break;

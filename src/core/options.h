@@ -99,6 +99,8 @@ struct runTimeOptions
     int8_t maskMoireOff;  // 'd': VDS_HSCALE offset applied (0 = off)
     uint8_t chromaShift;  // 'Y': bit0 = U delay, bit1 = V delay
     uint8_t outSyncSel;   // 'c': last OUT_SYNC_SEL value written
+    uint8_t interpBypass; // '!': VDS_TAP6_BYPS state, reapplied after presets
+    uint8_t svmGain;      // '*': VDS_SVM_GAIN level, reapplied after presets
 };
 // remember adc options across presets
 struct adcOptions

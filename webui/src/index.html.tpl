@@ -491,6 +491,48 @@
                 south_east
               </button>
             </div>
+
+            <!-- symmetric crop, MiSTer style: one tap cuts both sides -->
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="B"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_less</div>
+                <div>Crop H +</div>
+              </button>
+              <button
+                gbs-message="A"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_more</div>
+                <div>Crop H −</div>
+              </button>
+            </div>
+            <div class="gbs-flex">
+              <button
+                gbs-message="D"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_less</div>
+                <div>Crop V +</div>
+              </button>
+              <button
+                gbs-message="C"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_more</div>
+                <div>Crop V −</div>
+              </button>
+            </div>
           </fieldset>
 
           <!-- <fieldset class="gbs-fieldset controls-desktop">

@@ -104,7 +104,9 @@ void updateApiTelemetry()
     apiTel.vsActive = GBS::STATUS_SYNC_PROC_VSACT::read();
     apiTel.sync2En = GBS::DAC_RGBS_S1EN::read();
     apiTel.svmGain = GBS::VDS_SVM_GAIN::read();
-    apiTel.intByps = (uint8_t)(GBS::VDS_1ST_INT_BYPS::read() | (GBS::VDS_2ND_INT_BYPS::read() << 1));
+    apiTel.intByps = (uint8_t)(GBS::VDS_TAP6_BYPS::read() |
+                               (GBS::VDS_1ST_INT_BYPS::read() << 1) |
+                               (GBS::VDS_2ND_INT_BYPS::read() << 2));
 
     // getSourceFieldRate() drives the debug pin / test bus, so keep it slow
     if (rto->sourceDisconnected || !apiTel.vsActive) {

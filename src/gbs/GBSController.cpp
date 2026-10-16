@@ -1213,8 +1213,17 @@ void doPostPresetLoadSteps()
         GBS::VDS_PK_Y_H_BYPS::write(1);
     }
 
-    // unused now
-    GBS::VDS_TAP6_BYPS::write(0);
+    // unused now - unless the user bypassed the scaler filter ('!' cmd)
+    GBS::VDS_TAP6_BYPS::write(rto->interpBypass ? 1 : 0);
+
+    // re-apply user SVM level ('*' cmd) - preset arrays reset these regs
+    if (rto->svmGain) {
+        GBS::DAC_RGBS_SPD::write(0);
+        GBS::VDS_SVM_GAIN::write(rto->svmGain);
+        GBS::VDS_SVM_2ND_BYPS::write(0);
+        GBS::VDS_SVM_VCLK_DELAY::write(4);
+        GBS::VDS_SVM_OFFSET::write(0x20);
+    }
     /*if (uopt->wantTap6) { GBS::VDS_TAP6_BYPS::write(0); }
   else {
     GBS::VDS_TAP6_BYPS::write(1);

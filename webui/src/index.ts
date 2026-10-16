@@ -1441,7 +1441,7 @@ const updateStatusInfo = () => {
       setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
       setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
       setLabel("gbsLblSvm", `SVM ${s.svm === 0 ? "Off" : "0x" + s.svm.toString(16)}`);
-      setLabel("gbsLblInterp", `Interp Byp ${s.interp}`);
+      setLabel("gbsLblInterp", `Interp Byp ${s.interp ? "On" : "Off"}`);
     })
     .catch(() => {});
 };
