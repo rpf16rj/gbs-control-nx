@@ -2109,7 +2109,74 @@ section[name="alert"] {
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
                 <div class="gbs-icon">settings_input_composite</div>
-                <div>TBC Mode</div>
+                <div id="gbsLblTbc">TBC Mode</div>
+              </button>
+            </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="8"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">tune</div>
+                <div id="gbsLblSharp">Sharpness</div>
+              </button>
+              <button
+                gbs-message="d"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">border_vertical</div>
+                <div id="gbsLblMask">Mask FX</div>
+              </button>
+              <button
+                gbs-message="Y"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">palette</div>
+                <div id="gbsLblChroma">Chroma Shift</div>
+              </button>
+            </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="b"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">sync</div>
+                <div id="gbsLblSync2">Sync2 Out</div>
+              </button>
+              <button
+                gbs-message="c"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">alt_route</div>
+                <div id="gbsLblSyncSel">Sync Source</div>
+              </button>
+              <button
+                gbs-message="G"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">flip</div>
+                <div id="gbsLblHFlip">Flip H</div>
+              </button>
+              <button
+                gbs-message="y"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">flip</div>
+                <div id="gbsLblVFlip">Flip V</div>
               </button>
             </div>
           </fieldset>
@@ -3412,6 +3479,20 @@ const updateStatusInfo = () => {
             `phase sp ${s.phase_sp}    adc ${s.phase_adc}    sog ${s.sog_level}`,
             `ftl ${s.frame_time_lock}    tbc ${s.tbc_mode}    heap ${s.heap}`,
         ].join("\n");
+        const setLabel = (id, text) => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.textContent = text;
+            }
+        };
+        setLabel("gbsLblTbc", `TBC ${s.tbc_mode ? "On" : "Off"}`);
+        setLabel("gbsLblSharp", `Sharpness ${s.peaking}`);
+        setLabel("gbsLblMask", `Mask FX ${s.mask_off === 0 ? "Off" : s.mask_off}`);
+        setLabel("gbsLblChroma", `Chroma ${s.chroma === 0 ? "Off" : s.chroma}`);
+        setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
+        setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
+        setLabel("gbsLblHFlip", `Flip H ${s.h_flip ? "On" : "Off"}`);
+        setLabel("gbsLblVFlip", `Flip V ${s.v_flip ? "On" : "Off"}`);
     })
         .catch(() => { });
 };

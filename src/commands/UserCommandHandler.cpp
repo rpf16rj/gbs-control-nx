@@ -700,41 +700,96 @@ void handleType2Command(char argument)
         case 'c': {
             // cycle output sync source, 0_4f bits 6-7 (VDS / HDBypass / SP).
             // Experiment: changes the sync signal on both VGA outputs.
-            static uint8_t sel = 0;
-            sel = (sel + 1) & 3;
-            GBS::OUT_SYNC_SEL::write(sel);
+            rto->outSyncSel = (rto->outSyncSel + 1) & 3;
+            GBS::OUT_SYNC_SEL::write(rto->outSyncSel);
             SerialM.print(F("OUT_SYNC_SEL: "));
-            SerialM.println(sel);
+            SerialM.println(rto->outSyncSel);
         } break;
         case 'd': {
-            // "aperture grille" experiment: deliberate +/-1..2 offsets on
-            // VDS_HSCALE create periodic column brightness variation (vertical
-            // dark stripes) - the horizontal equivalent of what scanlines do
-            // with line interpolation. Cycle: +1, +2, -1, -2, normal.
-            static int8_t maskOff = 0;
+            // "aperture grille" experiment: deliberate offsets on VDS_HSCALE
+            // create periodic column brightness variation (vertical dark
+            // stripes) - the horizontal equivalent of what scanlines do with
+            // line interpolation. Cycle through +/- offsets back to normal.
+            static uint8_t maskIdx = 0;
             static uint16_t hscaleBase = 0xffff;
-            static const int8_t offs[5] = {0, 1, 2, -1, -2};
-            maskOff = (maskOff + 1) % 5;
-            if (maskOff == 1 || hscaleBase == 0xffff) {
+            static const int8_t offs[8] = {0, 1, 2, 4, -1, -2, -4, -8};
+            maskIdx = (maskIdx + 1) % 8;
+            if (maskIdx == 1 || hscaleBase == 0xffff) {
                 hscaleBase = GBS::VDS_HSCALE::read(); // capture preset's value
             }
-            GBS::VDS_HSCALE::write((uint16_t)((int)hscaleBase + offs[maskOff]));
+            rto->maskMoireOff = offs[maskIdx];
+            GBS::VDS_HSCALE::write((uint16_t)((int)hscaleBase + rto->maskMoireOff));
             SerialM.print(F("mask moire off: "));
-            SerialM.print((int)offs[maskOff]);
+            SerialM.print((int)rto->maskMoireOff);
             SerialM.print(F(" hscale: 0x"));
             SerialM.println(GBS::VDS_HSCALE::read(), HEX);
         } break;
         case 'Y': {
             // composite-style chroma shift (color fringing, mask-like effect):
             // cycles U delay, V delay, both, none
-            static uint8_t cm = 0;
-            cm = (cm + 1) & 3;
-            GBS::VDS_U_DELAY::write(cm & 1);
-            GBS::VDS_V_DELAY::write((cm >> 1) & 1);
+            rto->chromaShift = (rto->chromaShift + 1) & 3;
+            GBS::VDS_U_DELAY::write(rto->chromaShift & 1);
+            GBS::VDS_V_DELAY::write((rto->chromaShift >> 1) & 1);
             SerialM.print(F("chroma shift (u,v): "));
-            SerialM.print(cm & 1);
+            SerialM.print(rto->chromaShift & 1);
             SerialM.print(F(","));
-            SerialM.println((cm >> 1) & 1);
+            SerialM.println((rto->chromaShift >> 1) & 1);
+        } break;
+        case 'G': {
+            // horizontal mirror (mirror cabinet / TATE monitors)
+            rto->hFlip = !rto->hFlip;
+            GBS::MD_HS_FLIP::write(rto->hFlip);
+            SerialM.print(F("h-flip: "));
+            SerialM.println(rto->hFlip ? F("on") : F("off"));
+        } break;
+        case 'y': {
+            // vertical mirror
+            rto->vFlip = !rto->vFlip;
+            GBS::MD_VS_FLIP::write(rto->vFlip);
+            SerialM.print(F("v-flip: "));
+            SerialM.println(rto->vFlip ? F("on") : F("off"));
+        } break;
+        case 'I': {
+            // shift image left (move display window, keep size)
+            uint16_t st = GBS::VDS_DIS_HB_ST::read(), sp = GBS::VDS_DIS_HB_SP::read();
+            if (st > 4 && sp > 4) {
+                GBS::VDS_DIS_HB_ST::write(st - 4);
+                GBS::VDS_DIS_HB_SP::write(sp - 4);
+            } else {
+                SerialM.println("limit");
+            }
+        } break;
+        case 'J': {
+            // shift image right
+            uint16_t st = GBS::VDS_DIS_HB_ST::read(), sp = GBS::VDS_DIS_HB_SP::read();
+            uint16_t htotal = GBS::VDS_HSYNC_RST::read();
+            if (st < htotal - 4 && sp < htotal - 4) {
+                GBS::VDS_DIS_HB_ST::write(st + 4);
+                GBS::VDS_DIS_HB_SP::write(sp + 4);
+            } else {
+                SerialM.println("limit");
+            }
+        } break;
+        case 'V': {
+            // shift image up
+            uint16_t st = GBS::VDS_DIS_VB_ST::read(), sp = GBS::VDS_DIS_VB_SP::read();
+            if (st > 4 && sp > 4) {
+                GBS::VDS_DIS_VB_ST::write(st - 2);
+                GBS::VDS_DIS_VB_SP::write(sp - 2);
+            } else {
+                SerialM.println("limit");
+            }
+        } break;
+        case 'W': {
+            // shift image down
+            uint16_t st = GBS::VDS_DIS_VB_ST::read(), sp = GBS::VDS_DIS_VB_SP::read();
+            uint16_t vtotal = GBS::VDS_VSYNC_RST::read();
+            if (st < vtotal - 4 && sp < vtotal - 4) {
+                GBS::VDS_DIS_VB_ST::write(st + 2);
+                GBS::VDS_DIS_VB_SP::write(sp + 2);
+            } else {
+                SerialM.println("limit");
+            }
         } break;
         default:
             break;

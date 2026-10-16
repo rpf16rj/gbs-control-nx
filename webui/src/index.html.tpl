@@ -1430,7 +1430,74 @@
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
                 <div class="gbs-icon">settings_input_composite</div>
-                <div>TBC Mode</div>
+                <div id="gbsLblTbc">TBC Mode</div>
+              </button>
+            </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="8"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">tune</div>
+                <div id="gbsLblSharp">Sharpness</div>
+              </button>
+              <button
+                gbs-message="d"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">border_vertical</div>
+                <div id="gbsLblMask">Mask FX</div>
+              </button>
+              <button
+                gbs-message="Y"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">palette</div>
+                <div id="gbsLblChroma">Chroma Shift</div>
+              </button>
+            </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="b"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">sync</div>
+                <div id="gbsLblSync2">Sync2 Out</div>
+              </button>
+              <button
+                gbs-message="c"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">alt_route</div>
+                <div id="gbsLblSyncSel">Sync Source</div>
+              </button>
+              <button
+                gbs-message="G"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">flip</div>
+                <div id="gbsLblHFlip">Flip H</div>
+              </button>
+              <button
+                gbs-message="y"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">flip</div>
+                <div id="gbsLblVFlip">Flip V</div>
               </button>
             </div>
           </fieldset>

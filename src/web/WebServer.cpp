@@ -84,6 +84,7 @@ static struct {
     uint8_t pllLock;
     uint8_t hsActive;
     uint8_t vsActive;
+    uint8_t sync2En;
     float srcHz;
 } apiTel;
 
@@ -99,6 +100,7 @@ void updateApiTelemetry()
     apiTel.pllLock = GBS::STATUS_MISC_PLLAD_LOCK::read();
     apiTel.hsActive = GBS::STATUS_SYNC_PROC_HSACT::read();
     apiTel.vsActive = GBS::STATUS_SYNC_PROC_VSACT::read();
+    apiTel.sync2En = GBS::DAC_RGBS_S1EN::read();
 
     // getSourceFieldRate() drives the debug pin / test bus, so keep it slow
     if (rto->sourceDisconnected || !apiTel.vsActive) {
@@ -633,6 +635,20 @@ void startWebserver()
         json += (uopt->ifAutoOffset ? F("true") : F("false"));
         json += F(",\"pal_force60\":");
         json += (uopt->PalForce60 ? F("true") : F("false"));
+        json += F(",\"peaking\":");
+        json += uopt->peakingLevel;
+        json += F(",\"mask_off\":");
+        json += rto->maskMoireOff;
+        json += F(",\"chroma\":");
+        json += rto->chromaShift;
+        json += F(",\"sync_sel\":");
+        json += rto->outSyncSel;
+        json += F(",\"sync2_en\":");
+        json += (apiTel.sync2En ? F("true") : F("false"));
+        json += F(",\"h_flip\":");
+        json += (rto->hFlip ? F("true") : F("false"));
+        json += F(",\"v_flip\":");
+        json += (rto->vFlip ? F("true") : F("false"));
         json += F("}");
         request->send(200, "application/json", json);
     });

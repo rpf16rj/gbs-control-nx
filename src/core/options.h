@@ -95,6 +95,12 @@ struct runTimeOptions
     bool neoGeoCsyncLatched;
     // SP_H_PULSE_IGNOR was widened by TBC mode; allows updateSpDynamic() to shrink it back
     bool tbcIgnoreWidened;
+    // experimental command states (for /api/v1/status + WebUI button labels)
+    int8_t maskMoireOff;  // 'd': VDS_HSCALE offset applied (0 = off)
+    uint8_t chromaShift;  // 'Y': bit0 = U delay, bit1 = V delay
+    uint8_t outSyncSel;   // 'c': last OUT_SYNC_SEL value written
+    uint8_t hFlip;        // 'G': MD_HS_FLIP mirror state
+    uint8_t vFlip;        // 'y': MD_VS_FLIP mirror state
 };
 // remember adc options across presets
 struct adcOptions

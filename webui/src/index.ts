@@ -1419,6 +1419,21 @@ const updateStatusInfo = () => {
         `phase sp ${s.phase_sp}    adc ${s.phase_adc}    sog ${s.sog_level}`,
         `ftl ${s.frame_time_lock}    tbc ${s.tbc_mode}    heap ${s.heap}`,
       ].join("\n");
+
+      const setLabel = (id: string, text: string) => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.textContent = text;
+        }
+      };
+      setLabel("gbsLblTbc", `TBC ${s.tbc_mode ? "On" : "Off"}`);
+      setLabel("gbsLblSharp", `Sharpness ${s.peaking}`);
+      setLabel("gbsLblMask", `Mask FX ${s.mask_off === 0 ? "Off" : s.mask_off}`);
+      setLabel("gbsLblChroma", `Chroma ${s.chroma === 0 ? "Off" : s.chroma}`);
+      setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
+      setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
+      setLabel("gbsLblHFlip", `Flip H ${s.h_flip ? "On" : "Off"}`);
+      setLabel("gbsLblVFlip", `Flip V ${s.v_flip ? "On" : "Off"}`);
     })
     .catch(() => {});
 };
