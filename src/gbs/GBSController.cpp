@@ -1243,6 +1243,16 @@ void doPostPresetLoadSteps()
         GBS::VDS_PK_Y_V_BYPS::write(0);
         GBS::VDS_C_VPK_BYPS::write(0);
     }
+    if (rto->fxFlags & 0x20) { // U/V swap
+        GBS::VDS_UV_FLIP::write(1);
+    }
+    if (rto->fxFlags & 0x40) { // color-correction engines C1 + C2
+        GBS::VDS_C1_BYPS::write(0);
+        GBS::VDS_C2_BYPS::write(0);
+    }
+    if (rto->fxFlags & 0x80) { // chroma noise suppressor
+        GBS::VDS_NS_BYPS::write(0);
+    }
     /*if (uopt->wantTap6) { GBS::VDS_TAP6_BYPS::write(0); }
   else {
     GBS::VDS_TAP6_BYPS::write(1);

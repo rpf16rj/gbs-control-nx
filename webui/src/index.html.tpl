@@ -1584,6 +1584,35 @@
                 <div id="gbsLblVpk">V/Chroma Pk</div>
               </button>
             </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="y"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">invert_colors</div>
+                <div id="gbsLblUv">UV Flip</div>
+              </button>
+              <button
+                gbs-message="G"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">colorize</div>
+                <div id="gbsLblCc">Color Corr</div>
+              </button>
+              <button
+                gbs-message=","
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">blur_on</div>
+                <div id="gbsLblNs">Chroma NS</div>
+              </button>
+            </div>
           </fieldset>
           <fieldset class="gbs-fieldset">
             <legend class="gbs-fieldset__legend gbs-fieldset__legend--help"">

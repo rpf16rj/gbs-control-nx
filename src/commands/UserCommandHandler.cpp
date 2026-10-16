@@ -858,6 +858,32 @@ void handleType2Command(char argument)
             SerialM.print(F("vert/chroma peaking: "));
             SerialM.println(on ? F("on") : F("off"));
         } break;
+        case 'y': {
+            // U/V swap - hue inversion (3_24 b0). Pure fun/reversible.
+            rto->fxFlags ^= 0x20;
+            uint8_t on = rto->fxFlags & 0x20;
+            GBS::VDS_UV_FLIP::write(on);
+            SerialM.print(F("uv flip: "));
+            SerialM.println(on ? F("on") : F("off"));
+        } break;
+        case 'G': {
+            // color-correction engines C1 + C2 (3_65 b5 / 3_6B b5, bypassed;
+            // gains/tag slopes already set by presets)
+            rto->fxFlags ^= 0x40;
+            uint8_t on = rto->fxFlags & 0x40;
+            GBS::VDS_C1_BYPS::write(on ? 0 : 1);
+            GBS::VDS_C2_BYPS::write(on ? 0 : 1);
+            SerialM.print(F("color correction: "));
+            SerialM.println(on ? F("on") : F("off"));
+        } break;
+        case ',': {
+            // chroma noise suppressor (3_60 b2, bypassed)
+            rto->fxFlags ^= 0x80;
+            uint8_t on = rto->fxFlags & 0x80;
+            GBS::VDS_NS_BYPS::write(on ? 0 : 1);
+            SerialM.print(F("chroma noise supp: "));
+            SerialM.println(on ? F("on") : F("off"));
+        } break;
         default:
             break;
     }

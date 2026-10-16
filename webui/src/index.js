@@ -1166,6 +1166,7 @@ const updateStatusInfo = () => {
             `phase sp ${s.phase_sp}    adc ${s.phase_adc}    sog ${s.sog_level}`,
             `ftl ${s.frame_time_lock}    tbc ${s.tbc_mode}    heap ${s.heap}`,
             `chip ${(_a = s.chip_id) === null || _a === void 0 ? void 0 : _a.toString(16)} rev ${s.chip_rev}    fmt ${fmt}    pulldn ${s.pulldown}`,
+            `noise ${s.noise}    out vt ${s.out_vtotal}    fifo ${s.fifo}`,
         ].join("\n");
         const setLabel = (id, text) => {
             const btn = document.getElementById(id);
@@ -1185,6 +1186,9 @@ const updateStatusInfo = () => {
         setLabel("gbsLblWlev", `White Exp ${s.fx & 0x04 ? "On" : "Off"}`);
         setLabel("gbsLblBlue", `Blue Str ${s.fx & 0x08 ? "On" : "Off"}`);
         setLabel("gbsLblVpk", `V/Chroma Pk ${s.fx & 0x10 ? "On" : "Off"}`);
+        setLabel("gbsLblUv", `UV Flip ${s.fx & 0x20 ? "On" : "Off"}`);
+        setLabel("gbsLblCc", `Color Corr ${s.fx & 0x40 ? "On" : "Off"}`);
+        setLabel("gbsLblNs", `Chroma NS ${s.fx & 0x80 ? "On" : "Off"}`);
     })
         .catch(() => { });
 };

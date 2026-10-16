@@ -94,6 +94,7 @@ static struct {
     uint8_t pullDown;  // STATUS_DEINT_PULLDN - 3:2 pulldown detected
     uint8_t fifoFlags; // STATUS_MEM_FF_* FIFO health byte
     uint16_t outVtotal; // STATUS_VDS_VERT_COUNT - live output lines
+    uint16_t glbNoise;  // VDS_GLB_NOISE - global noise estimate
     float srcHz;
 } apiTel;
 
@@ -119,6 +120,7 @@ void updateApiTelemetry()
     apiTel.pullDown = GBS::STATUS_DEINT_PULLDN::read();
     apiTel.fifoFlags = GBS::STATUS_13::read();
     apiTel.outVtotal = GBS::STATUS_VDS_VERT_COUNT::read();
+    apiTel.glbNoise = GBS::VDS_GLB_NOISE::read();
 
     // getSourceFieldRate() drives the debug pin / test bus, so keep it slow
     if (rto->sourceDisconnected || !apiTel.vsActive) {
@@ -683,6 +685,8 @@ void startWebserver()
         json += apiTel.fifoFlags;
         json += F(",\"out_vtotal\":");
         json += apiTel.outVtotal;
+        json += F(",\"noise\":");
+        json += apiTel.glbNoise;
         json += F(",\"last_reg\":");
         json += apiLastRegRead;
         json += F("}");
