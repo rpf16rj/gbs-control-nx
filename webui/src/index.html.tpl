@@ -1642,6 +1642,55 @@
                 <div id="gbsLblCore">Coring</div>
               </button>
             </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="'"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">remove</div>
+                <div id="gbsLblPclkM">PCLK -</div>
+              </button>
+              <button
+                gbs-message="]"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">add</div>
+                <div id="gbsLblPclkP">PCLK +</div>
+              </button>
+              <button
+                gbs-message=">"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">speed</div>
+                <div id="gbsLblOsr">OSR</div>
+              </button>
+            </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message="."
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">tune</div>
+                <div id="gbsLblPhAdc">Ph ADC +</div>
+              </button>
+              <button
+                gbs-message="/"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">sync_alt</div>
+                <div id="gbsLblPhSp">Ph SP +</div>
+              </button>
+            </div>
           </fieldset>
           <fieldset class="gbs-fieldset">
             <legend class="gbs-fieldset__legend gbs-fieldset__legend--help"">

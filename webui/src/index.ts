@@ -1467,6 +1467,11 @@ const updateStatusInfo = () => {
       setLabel("gbsLblCrisp", `Crisp ${s.crisp ? "On" : "Off"}`);
       setLabel("gbsLblStep", `Step 0x${(s.step ?? 0).toString(16)}`);
       setLabel("gbsLblCore", `Coring ${s.core}`);
+      setLabel("gbsLblPclkM", `PCLK ${s.pll_divider ?? "-"} -`);
+      setLabel("gbsLblPclkP", `PCLK ${s.pll_divider ?? "-"} +`);
+      setLabel("gbsLblOsr", `OSR ${s.osr ?? 0}x`);
+      setLabel("gbsLblPhAdc", `Ph ADC ${s.phase_adc} +`);
+      setLabel("gbsLblPhSp", `Ph SP ${s.phase_sp} +`);
     })
     .catch(() => {});
 };

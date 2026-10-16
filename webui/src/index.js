@@ -1134,7 +1134,7 @@ const updateStatusInfo = () => {
     fetch(`/api/v1/status?${+new Date()}`)
         .then((r) => r.json())
         .then((s) => {
-        var _a, _b;
+        var _a, _b, _c, _d, _e;
         const el = document.getElementById("gbsInfoText");
         if (!el) {
             return;
@@ -1192,6 +1192,11 @@ const updateStatusInfo = () => {
         setLabel("gbsLblCrisp", `Crisp ${s.crisp ? "On" : "Off"}`);
         setLabel("gbsLblStep", `Step 0x${((_b = s.step) !== null && _b !== void 0 ? _b : 0).toString(16)}`);
         setLabel("gbsLblCore", `Coring ${s.core}`);
+        setLabel("gbsLblPclkM", `PCLK ${(_c = s.pll_divider) !== null && _c !== void 0 ? _c : "-"} -`);
+        setLabel("gbsLblPclkP", `PCLK ${(_d = s.pll_divider) !== null && _d !== void 0 ? _d : "-"} +`);
+        setLabel("gbsLblOsr", `OSR ${(_e = s.osr) !== null && _e !== void 0 ? _e : 0}x`);
+        setLabel("gbsLblPhAdc", `Ph ADC ${s.phase_adc} +`);
+        setLabel("gbsLblPhSp", `Ph SP ${s.phase_sp} +`);
     })
         .catch(() => { });
 };

@@ -697,6 +697,8 @@ void startWebserver()
         json += apiTel.stepGain;
         json += F(",\"core\":");
         json += apiTel.pkCore;
+        json += F(",\"osr\":");
+        json += rto->osr;
         json += F(",\"last_reg\":");
         json += apiLastRegRead;
         json += F("}");

@@ -912,6 +912,56 @@ void handleType2Command(char argument)
             SerialM.print(F("peak coring: "));
             SerialM.println(coreLv[coreIdx]);
         } break;
+        case ']': {
+            // sampling pixel clock (PLLAD_MD) +1: nudge toward the
+            // console's true dot clock to reduce vertical banding/moire.
+            // Re-run auto phase ('2') after large adjustments.
+            uint16_t md = GBS::PLLAD_MD::read();
+            if (md < 0xFFE) {
+                GBS::PLLAD_MD::write(md + 1);
+                latchPLLAD();
+            }
+            SerialM.print(F("pixel clock: "));
+            SerialM.println(GBS::PLLAD_MD::read());
+        } break;
+        case '\'': {
+            uint16_t md = GBS::PLLAD_MD::read();
+            if (md > 0x101) {
+                GBS::PLLAD_MD::write(md - 1);
+                latchPLLAD();
+            }
+            SerialM.print(F("pixel clock: "));
+            SerialM.println(GBS::PLLAD_MD::read());
+        } break;
+        case '.': {
+            // manual ADC sampling phase nudge (+1 of 32)
+            rto->phaseADC = (rto->phaseADC + 1) & 0x1f;
+            setAndLatchPhaseADC();
+            SerialM.print(F("phaseADC: "));
+            SerialM.println(rto->phaseADC);
+        } break;
+        case '/': {
+            // manual SP phase nudge (+1 of 32)
+            rto->phaseSP = (rto->phaseSP + 1) & 0x1f;
+            setAndLatchPhaseSP();
+            SerialM.print(F("phaseSP: "));
+            SerialM.println(rto->phaseSP);
+        } break;
+        case '>': {
+            // cycle ADC oversampling 1x -> 2x -> 4x -> 1x
+            // higher osr = finer phase granularity; the KS register limits
+            // what's possible, setOverSampleRatio() auto-decrements.
+            uint8_t next = (rto->osr == 1) ? 2 : (rto->osr == 2) ? 4 : 1;
+            setOverSampleRatio(next, false); // apply now
+            latchPLLAD();
+            delay(60); // let the pll settle before re-measuring phase
+            optimizePhaseSP();
+            SerialM.print(F("oversample: "));
+            SerialM.print(rto->osr);
+            SerialM.print(F("x (requested "));
+            SerialM.print(next);
+            SerialM.println(F("x)"));
+        } break;
         default:
             break;
     }
