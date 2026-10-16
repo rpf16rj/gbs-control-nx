@@ -713,6 +713,12 @@ void runSyncWatcher()
                 if ((rto->continousStableCounter % 10) == 0) {
                     rto->phaseIsSet = optimizePhaseSP();
                 }
+            } else if (rto->continousStableCounter >= 90) {
+                // sparse retries past the fast window: covers sources that were
+                // still settling during the first attempts (fresh power-on)
+                if ((rto->continousStableCounter % 64) == 0) {
+                    rto->phaseIsSet = optimizePhaseSP();
+                }
             }
         }
 
