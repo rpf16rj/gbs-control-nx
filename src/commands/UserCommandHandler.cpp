@@ -798,21 +798,16 @@ void handleType2Command(char argument)
             SerialM.println(rto->svmGain, HEX);
         } break;
         case '!': {
-            // Real scaler-filter bypass: VDS_TAP6_BYPS (3_24 bit3) disables the
-            // 6-tap scaling filter -> hard pixel edges. The input-path
-            // interpolators (3_40) show no visible effect, but we cycle them
-            // too for completeness. Preset reapply resets TAP6 - restore via
-            // rto->interpBypass.
-            static const uint8_t ibStates[4] = {0, 1, 3, 3};
-            static uint8_t ib = 0;
-            ib = (ib + 1) & 3;
-            rto->interpBypass = ibStates[ib] & 1;
+            // Real scaler-filter bypass: VDS_TAP6_BYPS (3_24 bit3) disables
+            // the 6-tap scaling filter -> hard pixel edges. Plain on/off;
+            // the input-path interpolators (3_40) caused color corruption,
+            // so they stay untouched. Preset reapply resets TAP6 - the
+            // state is restored via rto->interpBypass.
+            rto->interpBypass = !rto->interpBypass;
             GBS::VDS_TAP6_BYPS::write(rto->interpBypass);
             // delay compensation copied from 't' (tap6 toggle)
             GBS::MADPT_Y_DELAY_UV_DELAY::write(
                 GBS::MADPT_Y_DELAY_UV_DELAY::read() + (rto->interpBypass ? 1 : -1));
-            GBS::VDS_1ST_INT_BYPS::write(ibStates[ib] & 1);
-            GBS::VDS_2ND_INT_BYPS::write((ibStates[ib] >> 1) & 1);
             SerialM.print(F("interp bypass: "));
             SerialM.println(rto->interpBypass ? F("on (tap6)") : F("off"));
         } break;

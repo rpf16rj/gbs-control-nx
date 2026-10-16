@@ -111,9 +111,7 @@ void updateApiTelemetry()
     apiTel.vsActive = GBS::STATUS_SYNC_PROC_VSACT::read();
     apiTel.sync2En = GBS::DAC_RGBS_S1EN::read();
     apiTel.svmGain = GBS::VDS_SVM_GAIN::read();
-    apiTel.intByps = (uint8_t)(GBS::VDS_TAP6_BYPS::read() |
-                               (GBS::VDS_1ST_INT_BYPS::read() << 1) |
-                               (GBS::VDS_2ND_INT_BYPS::read() << 2));
+    apiTel.intByps = GBS::VDS_TAP6_BYPS::read();
     apiTel.ifFmt0 = GBS::STATUS_00::read();
     apiTel.ifFmt4 = GBS::STATUS_04::read();
     apiTel.chipId = GBS::CHIP_ID_PRODUCT::read();

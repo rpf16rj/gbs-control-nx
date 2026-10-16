@@ -1514,6 +1514,8 @@
                 <div class="gbs-icon">alt_route</div>
                 <div id="gbsLblSyncSel">Sync Source</div>
               </button>
+            </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
               <button
                 gbs-message="*"
                 gbs-message-type="user"
@@ -1561,6 +1563,8 @@
                 <div class="gbs-icon">brightness_high</div>
                 <div id="gbsLblWlev">White Exp</div>
               </button>
+            </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
               <button
                 gbs-message="("
                 gbs-message-type="user"
