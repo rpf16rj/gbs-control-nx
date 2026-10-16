@@ -962,6 +962,22 @@ void handleType2Command(char argument)
             SerialM.print(next);
             SerialM.println(F("x)"));
         } break;
+        case '`': {
+            // EXPERIMENT: interlaced output ("same as input" for 480i sources
+            // on 15kHz CRTs). VDS_DFIELD_EN is unused by all presets; enabling
+            // it should make the output field-alternating. Watch 'out_vtotal'
+            // telemetry - it should roughly double if fields are emitted.
+            uint8_t on = !GBS::VDS_DFIELD_EN::read();
+            GBS::VDS_DFIELD_EN::write(on);
+            GBS::VDS_FIELDAB_EN::write(1); // field machinery needs both fields
+            delay(60);
+            SerialM.print(F("interlace out: "));
+            SerialM.print(on ? F("on") : F("off"));
+            SerialM.print(F(" field="));
+            SerialM.print(GBS::STATUS_VDS_FIELD::read());
+            SerialM.print(F(" out_vt="));
+            SerialM.println(GBS::STATUS_VDS_VERT_COUNT::read());
+        } break;
         default:
             break;
     }

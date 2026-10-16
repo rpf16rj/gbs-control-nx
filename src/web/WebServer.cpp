@@ -97,6 +97,8 @@ static struct {
     uint16_t glbNoise;  // VDS_GLB_NOISE - global noise estimate
     uint8_t stepGain;   // VDS_STEP_GAIN
     uint8_t pkCore;     // VDS_PK_LB_CORE (coring level)
+    uint8_t dfieldEn;   // VDS_DFIELD_EN - interlaced output experiment
+    uint8_t vdsField;   // STATUS_VDS_FIELD - which field is being output
     float srcHz;
 } apiTel;
 
@@ -125,6 +127,8 @@ void updateApiTelemetry()
     apiTel.glbNoise = GBS::VDS_GLB_NOISE::read();
     apiTel.stepGain = GBS::VDS_STEP_GAIN::read();
     apiTel.pkCore = GBS::VDS_PK_LB_CORE::read();
+    apiTel.dfieldEn = GBS::VDS_DFIELD_EN::read();
+    apiTel.vdsField = GBS::STATUS_VDS_FIELD::read();
 
     // getSourceFieldRate() drives the debug pin / test bus, so keep it slow
     if (rto->sourceDisconnected || !apiTel.vsActive) {
@@ -699,6 +703,10 @@ void startWebserver()
         json += apiTel.pkCore;
         json += F(",\"osr\":");
         json += rto->osr;
+        json += F(",\"int_out\":");
+        json += (apiTel.dfieldEn ? F("true") : F("false"));
+        json += F(",\"vds_field\":");
+        json += apiTel.vdsField;
         json += F(",\"last_reg\":");
         json += apiLastRegRead;
         json += F("}");

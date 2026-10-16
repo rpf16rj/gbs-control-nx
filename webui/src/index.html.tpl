@@ -1690,6 +1690,15 @@
                 <div class="gbs-icon">sync_alt</div>
                 <div id="gbsLblPhSp">Ph SP +</div>
               </button>
+              <button
+                gbs-message="`"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">interests</div>
+                <div id="gbsLblInt">480i Out</div>
+              </button>
             </div>
           </fieldset>
           <fieldset class="gbs-fieldset">

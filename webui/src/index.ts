@@ -1472,6 +1472,7 @@ const updateStatusInfo = () => {
       setLabel("gbsLblOsr", `OSR ${s.osr ?? 0}x`);
       setLabel("gbsLblPhAdc", `Ph ADC ${s.phase_adc} +`);
       setLabel("gbsLblPhSp", `Ph SP ${s.phase_sp} +`);
+      setLabel("gbsLblInt", `480i Out ${s.int_out ? "On" : "Off"}`);
     })
     .catch(() => {});
 };
