@@ -685,6 +685,22 @@ section[name="alert"] {
   }
 }
 
+/* press feedback for momentary command buttons */
+@keyframes gbs-press-flash {
+  0% {
+    transform: scale(0.94);
+    filter: brightness(1.7);
+  }
+  100% {
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+.gbs-press-fx {
+  animation: gbs-press-flash 0.3s ease-out;
+}
+
     </style>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAVFBMVEUAAAD////5+fnh4eEKCgzp6enw8PDCw8MrLCxERUZTVFTX19fMzM2pqqqioqJOTk8dHiC7u7yFhogzMzSxsbKWl5eRkpJiY2WdnZ53eXltbm85OzuxUg5OAAABEUlEQVQ4y7WRS7KEIAxFbwwIivj/9/73+Yim7Il2Vw/eGRCTOhUwwXcy+gQAOsg4WAnCVUhf2oENBM5x8CLyZ0EFTrXRTW3mUDgXDeIGX4VxJxUARwcv5Oms0BqQoELEoKkRPfNIV070FjwqohKmDQZ6dQegViEd0njzwAgz+BR7IlsAJlNBZ4Ghw5ai5rnHcgndUe9XhFMgIaLRNyxAZF7Q71iZK4N2ddZGgFXQqSDgpK/OGN+jzl3sLBELueSh65iE78v6EXOCB5rK5glrx3ulpYv+vgFRKJuymWWfdxREk3biJ6GW6J2bnwXln4V2nvePf+GJ+GkOTuLyNIdB9mytJRFvqUmxw9Mzy4PG4Af+AH46CY6DHZXgAAAAAElFTkSuQmCC" />
@@ -2161,22 +2177,22 @@ section[name="alert"] {
                 <div id="gbsLblSyncSel">Sync Source</div>
               </button>
               <button
-                gbs-message="G"
+                gbs-message="*"
                 gbs-message-type="user"
                 gbs-click="normal"
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
-                <div class="gbs-icon">flip</div>
-                <div id="gbsLblHFlip">Flip H</div>
+                <div class="gbs-icon">flare</div>
+                <div id="gbsLblSvm">SVM</div>
               </button>
               <button
-                gbs-message="y"
+                gbs-message="!"
                 gbs-message-type="user"
                 gbs-click="normal"
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
-                <div class="gbs-icon">flip</div>
-                <div id="gbsLblVFlip">Flip V</div>
+                <div class="gbs-icon">grain</div>
+                <div id="gbsLblInterp">Interp Bypass</div>
               </button>
             </div>
           </fieldset>
@@ -3255,9 +3271,16 @@ const initGBSButtons = () => {
         const message = button.getAttribute("gbs-message");
         const messageType = button.getAttribute("gbs-message-type");
         const action = actions[messageType];
+        const pressFx = () => {
+            button.classList.add("gbs-press-fx");
+            setTimeout(() => button.classList.remove("gbs-press-fx"), 300);
+            // refresh state labels fast after a command instead of waiting the 3s poll
+            setTimeout(updateStatusInfo, 700);
+        };
         if (clickMode === "normal") {
             button.addEventListener("click", () => {
                 action(message);
+                pressFx();
             });
         }
         if (clickMode === "repeat") {
@@ -3265,6 +3288,7 @@ const initGBSButtons = () => {
                 action(message);
             };
             button.addEventListener(!("ontouchstart" in window) ? "mousedown" : "touchstart", () => {
+                pressFx();
                 callback();
                 clearInterval(button["__interval"]);
                 button["__interval"] = setInterval(callback, 300);
@@ -3491,8 +3515,8 @@ const updateStatusInfo = () => {
         setLabel("gbsLblChroma", `Chroma ${s.chroma === 0 ? "Off" : s.chroma}`);
         setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
         setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
-        setLabel("gbsLblHFlip", `Flip H ${s.h_flip ? "On" : "Off"}`);
-        setLabel("gbsLblVFlip", `Flip V ${s.v_flip ? "On" : "Off"}`);
+        setLabel("gbsLblSvm", `SVM ${s.svm === 0 ? "Off" : "0x" + s.svm.toString(16)}`);
+        setLabel("gbsLblInterp", `Interp Byp ${s.interp}`);
     })
         .catch(() => { });
 };

@@ -735,20 +735,6 @@ void handleType2Command(char argument)
             SerialM.print(F(","));
             SerialM.println((rto->chromaShift >> 1) & 1);
         } break;
-        case 'G': {
-            // horizontal mirror (mirror cabinet / TATE monitors)
-            rto->hFlip = !rto->hFlip;
-            GBS::MD_HS_FLIP::write(rto->hFlip);
-            SerialM.print(F("h-flip: "));
-            SerialM.println(rto->hFlip ? F("on") : F("off"));
-        } break;
-        case 'y': {
-            // vertical mirror
-            rto->vFlip = !rto->vFlip;
-            GBS::MD_VS_FLIP::write(rto->vFlip);
-            SerialM.print(F("v-flip: "));
-            SerialM.println(rto->vFlip ? F("on") : F("off"));
-        } break;
         case 'I': {
             // shift image left (move display window, keep size)
             uint16_t st = GBS::VDS_DIS_HB_ST::read(), sp = GBS::VDS_DIS_HB_SP::read();

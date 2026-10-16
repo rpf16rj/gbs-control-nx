@@ -677,3 +677,19 @@ section[name="alert"] {
     opacity: 0;
   }
 }
+
+/* press feedback for momentary command buttons */
+@keyframes gbs-press-flash {
+  0% {
+    transform: scale(0.94);
+    filter: brightness(1.7);
+  }
+  100% {
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+.gbs-press-fx {
+  animation: gbs-press-flash 0.3s ease-out;
+}

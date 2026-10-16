@@ -1482,22 +1482,22 @@
                 <div id="gbsLblSyncSel">Sync Source</div>
               </button>
               <button
-                gbs-message="G"
+                gbs-message="*"
                 gbs-message-type="user"
                 gbs-click="normal"
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
-                <div class="gbs-icon">flip</div>
-                <div id="gbsLblHFlip">Flip H</div>
+                <div class="gbs-icon">flare</div>
+                <div id="gbsLblSvm">SVM</div>
               </button>
               <button
-                gbs-message="y"
+                gbs-message="!"
                 gbs-message-type="user"
                 gbs-click="normal"
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
-                <div class="gbs-icon">flip</div>
-                <div id="gbsLblVFlip">Flip V</div>
+                <div class="gbs-icon">grain</div>
+                <div id="gbsLblInterp">Interp Bypass</div>
               </button>
             </div>
           </fieldset>

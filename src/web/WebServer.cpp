@@ -86,6 +86,7 @@ static struct {
     uint8_t vsActive;
     uint8_t sync2En;
     uint8_t svmGain;
+    uint8_t intByps;
     float srcHz;
 } apiTel;
 
@@ -103,6 +104,7 @@ void updateApiTelemetry()
     apiTel.vsActive = GBS::STATUS_SYNC_PROC_VSACT::read();
     apiTel.sync2En = GBS::DAC_RGBS_S1EN::read();
     apiTel.svmGain = GBS::VDS_SVM_GAIN::read();
+    apiTel.intByps = (uint8_t)(GBS::VDS_1ST_INT_BYPS::read() | (GBS::VDS_2ND_INT_BYPS::read() << 1));
 
     // getSourceFieldRate() drives the debug pin / test bus, so keep it slow
     if (rto->sourceDisconnected || !apiTel.vsActive) {
@@ -647,10 +649,8 @@ void startWebserver()
         json += rto->outSyncSel;
         json += F(",\"sync2_en\":");
         json += (apiTel.sync2En ? F("true") : F("false"));
-        json += F(",\"h_flip\":");
-        json += (rto->hFlip ? F("true") : F("false"));
-        json += F(",\"v_flip\":");
-        json += (rto->vFlip ? F("true") : F("false"));
+        json += F(",\"interp\":");
+        json += apiTel.intByps;
         json += F(",\"svm\":");
         json += apiTel.svmGain;
         json += F(",\"last_reg\":");

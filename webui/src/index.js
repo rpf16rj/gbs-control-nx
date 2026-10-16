@@ -914,9 +914,16 @@ const initGBSButtons = () => {
         const message = button.getAttribute("gbs-message");
         const messageType = button.getAttribute("gbs-message-type");
         const action = actions[messageType];
+        const pressFx = () => {
+            button.classList.add("gbs-press-fx");
+            setTimeout(() => button.classList.remove("gbs-press-fx"), 300);
+            // refresh state labels fast after a command instead of waiting the 3s poll
+            setTimeout(updateStatusInfo, 700);
+        };
         if (clickMode === "normal") {
             button.addEventListener("click", () => {
                 action(message);
+                pressFx();
             });
         }
         if (clickMode === "repeat") {
@@ -924,6 +931,7 @@ const initGBSButtons = () => {
                 action(message);
             };
             button.addEventListener(!("ontouchstart" in window) ? "mousedown" : "touchstart", () => {
+                pressFx();
                 callback();
                 clearInterval(button["__interval"]);
                 button["__interval"] = setInterval(callback, 300);
@@ -1150,8 +1158,8 @@ const updateStatusInfo = () => {
         setLabel("gbsLblChroma", `Chroma ${s.chroma === 0 ? "Off" : s.chroma}`);
         setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
         setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
-        setLabel("gbsLblHFlip", `Flip H ${s.h_flip ? "On" : "Off"}`);
-        setLabel("gbsLblVFlip", `Flip V ${s.v_flip ? "On" : "Off"}`);
+        setLabel("gbsLblSvm", `SVM ${s.svm === 0 ? "Off" : "0x" + s.svm.toString(16)}`);
+        setLabel("gbsLblInterp", `Interp Byp ${s.interp}`);
     })
         .catch(() => { });
 };
