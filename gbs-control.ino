@@ -1543,6 +1543,50 @@ void loop()
         handleWiFi(1);
     }
 
+    // pending register poke/peek scheduled by /api/v1/reg (loop owns the I2C)
+    if (regOpSeg != 0xff) {
+        uint8_t seg = regOpSeg;
+        uint8_t off = regOpOff;
+        int16_t val = regOpVal;
+        regOpSeg = 0xff; // consume slot
+        if (rto->boardHasPower) {
+            writeOneByte(0xF0, seg);
+            uint8_t r0 = 0;
+            readFromRegister(off, 1, &r0);
+            if (val < 0) {
+                apiLastRegRead = r0;
+                SerialM.printf("reg s%u_%02X = 0x%02X\n", seg, off, r0);
+            } else {
+                writeOneByte(off, (uint8_t)val);
+                uint8_t r1 = 0;
+                readFromRegister(off, 1, &r1);
+                apiLastRegRead = r1;
+                SerialM.printf("reg s%u_%02X: 0x%02X -> 0x%02X\n", seg, off, r0, r1);
+            }
+        }
+    }
+
+    // pending segment dump scheduled by /api/v1/segdump
+    if (regDumpSeg != 0xff) {
+        uint8_t seg = regDumpSeg;
+        regDumpSeg = 0xff;
+        if (rto->boardHasPower) {
+            writeOneByte(0xF0, seg);
+            SerialM.printf("--- seg %u dump ---\n", seg);
+            for (uint16_t off = 0; off < 256; off += 16) {
+                char line[72];
+                int n = snprintf(line, sizeof(line), "%02X:", off);
+                for (uint8_t i = 0; i < 16; i++) {
+                    uint8_t r = 0;
+                    readFromRegister(off + i, 1, &r);
+                    n += snprintf(line + n, sizeof(line) - n, " %02X", r);
+                }
+                SerialM.println(line);
+            }
+            SerialM.println(F("--- end dump ---"));
+        }
+    }
+
     // run FrameTimeLock if enabled
     if (uopt->enableFrameTimeLock && rto->sourceDisconnected == false && rto->autoBestHtotalEnabled &&
         rto->syncWatcherEnabled && FrameSync::ready() && millis() - lastVsyncLock > FrameSyncAttrs::lockInterval && rto->continousStableCounter > 20 && rto->noSyncCounter == 0)

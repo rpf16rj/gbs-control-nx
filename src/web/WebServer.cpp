@@ -85,6 +85,7 @@ static struct {
     uint8_t hsActive;
     uint8_t vsActive;
     uint8_t sync2En;
+    uint8_t svmGain;
     float srcHz;
 } apiTel;
 
@@ -101,6 +102,7 @@ void updateApiTelemetry()
     apiTel.hsActive = GBS::STATUS_SYNC_PROC_HSACT::read();
     apiTel.vsActive = GBS::STATUS_SYNC_PROC_VSACT::read();
     apiTel.sync2En = GBS::DAC_RGBS_S1EN::read();
+    apiTel.svmGain = GBS::VDS_SVM_GAIN::read();
 
     // getSourceFieldRate() drives the debug pin / test bus, so keep it slow
     if (rto->sourceDisconnected || !apiTel.vsActive) {
@@ -649,6 +651,10 @@ void startWebserver()
         json += (rto->hFlip ? F("true") : F("false"));
         json += F(",\"v_flip\":");
         json += (rto->vFlip ? F("true") : F("false"));
+        json += F(",\"svm\":");
+        json += apiTel.svmGain;
+        json += F(",\"last_reg\":");
+        json += apiLastRegRead;
         json += F("}");
         request->send(200, "application/json", json);
     });
@@ -673,6 +679,49 @@ void startWebserver()
             userCommandQueue.push(p->name().charAt(0));
         }
         request->send(200, "application/json", "true");
+    });
+
+    // REA / live register experimentation:
+    //   GET /api/v1/reg?seg=3&off=0x2b        -> schedule a read
+    //   GET /api/v1/reg?seg=3&off=0x2b&val=4  -> schedule a write
+    // The op is executed by loop() (sole I2C owner). The read result lands in
+    // apiLastRegRead (see "last_reg" in /api/v1/status) and is also logged
+    // to the serial/WebSocket console.
+    server.on("/api/v1/reg", HTTP_GET, [](AsyncWebServerRequest *request) {
+        if (!request->hasParam("seg") || !request->hasParam("off")) {
+            request->send(400, "application/json", "{\"error\":\"need seg & off\"}");
+            return;
+        }
+        long seg = strtol(request->getParam("seg")->value().c_str(), nullptr, 0);
+        long off = strtol(request->getParam("off")->value().c_str(), nullptr, 0);
+        long val = -1;
+        if (request->hasParam("val")) {
+            val = strtol(request->getParam("val")->value().c_str(), nullptr, 0);
+        }
+        if (seg < 0 || seg > 7 || off < 0 || off > 0xff || val > 0xff) {
+            request->send(400, "application/json", "{\"error\":\"range\"}");
+            return;
+        }
+        regOpOff = (uint8_t)off;
+        regOpVal = (int16_t)val;
+        regOpSeg = (uint8_t)seg; // arm last (slot consumed by loop)
+        request->send(200, "application/json", "{\"queued\":true}");
+    });
+
+    // GET /api/v1/segdump?seg=3 -> dump all 256 regs of a segment to the
+    // serial/WebSocket console (for before/after diffs when probing).
+    server.on("/api/v1/segdump", HTTP_GET, [](AsyncWebServerRequest *request) {
+        if (!request->hasParam("seg")) {
+            request->send(400, "application/json", "{\"error\":\"need seg\"}");
+            return;
+        }
+        long seg = strtol(request->getParam("seg")->value().c_str(), nullptr, 0);
+        if (seg < 0 || seg > 7) {
+            request->send(400, "application/json", "{\"error\":\"range\"}");
+            return;
+        }
+        regDumpSeg = (uint8_t)seg;
+        request->send(200, "application/json", "{\"queued\":true}");
     });
 
     server.on("/wifi/status", HTTP_GET, [](AsyncWebServerRequest *request) {

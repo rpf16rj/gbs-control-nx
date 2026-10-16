@@ -43,4 +43,13 @@ private:
 extern CommandQueue serialCommandQueue; // 'sc' endpoint / serial-style commands
 extern CommandQueue userCommandQueue;   // 'uc' endpoint / user (type 2) commands
 
+// Pending register poke/peek scheduled by /api/v1/reg (and /api/v1/segdump).
+// Same SPSC discipline as the queues: the async handler writes the slot,
+// loop() (sole I2C owner) consumes and clears it. Single slot, last wins.
+extern volatile uint8_t regOpSeg;    // 0xff = idle
+extern volatile uint8_t regOpOff;
+extern volatile int16_t regOpVal;    // -1 = read, else write this byte
+extern volatile uint8_t regDumpSeg;  // 0xff = no dump pending
+extern int16_t apiLastRegRead;       // result of last /api/v1/reg read
+
 #endif // COMMAND_QUEUE_H

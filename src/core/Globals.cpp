@@ -56,6 +56,12 @@ char serialCommand; // Serial / Web Server commands
 char userCommand;   // Serial / Web Server commands
 CommandQueue serialCommandQueue; // filled by /sc web handler (async context)
 CommandQueue userCommandQueue;   // filled by /uc web handler (async context)
+
+volatile uint8_t regOpSeg = 0xff;
+volatile uint8_t regOpOff = 0;
+volatile int16_t regOpVal = -1;
+volatile uint8_t regDumpSeg = 0xff;
+int16_t apiLastRegRead = -1;
 // lastSegment is defined in src/gbs/GBSRegister.cpp
 
 // Best observed Si5351 XTAL load capacitance setting from detection/init.
