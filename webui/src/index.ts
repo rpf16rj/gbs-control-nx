@@ -1464,6 +1464,9 @@ const updateStatusInfo = () => {
       setLabel("gbsLblUv", `UV Flip ${s.fx & 0x20 ? "On" : "Off"}`);
       setLabel("gbsLblCc", `Color Corr ${s.fx & 0x40 ? "On" : "Off"}`);
       setLabel("gbsLblNs", `Chroma NS ${s.fx & 0x80 ? "On" : "Off"}`);
+      setLabel("gbsLblCrisp", `Crisp ${s.crisp ? "On" : "Off"}`);
+      setLabel("gbsLblStep", `Step 0x${(s.step ?? 0).toString(16)}`);
+      setLabel("gbsLblCore", `Coring ${s.core}`);
     })
     .catch(() => {});
 };

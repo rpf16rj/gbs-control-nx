@@ -1613,6 +1613,35 @@
                 <div id="gbsLblNs">Chroma NS</div>
               </button>
             </div>
+            <div class="gbs-flex gbs-margin__bottom--16">
+              <button
+                gbs-message=";"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">grid_on</div>
+                <div id="gbsLblCrisp">Crisp</div>
+              </button>
+              <button
+                gbs-message=":"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">stairs</div>
+                <div id="gbsLblStep">Step</div>
+              </button>
+              <button
+                gbs-message="<"
+                gbs-message-type="user"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">filter_alt</div>
+                <div id="gbsLblCore">Coring</div>
+              </button>
+            </div>
           </fieldset>
           <fieldset class="gbs-fieldset">
             <legend class="gbs-fieldset__legend gbs-fieldset__legend--help"">

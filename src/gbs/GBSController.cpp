@@ -1253,6 +1253,9 @@ void doPostPresetLoadSteps()
     if (rto->fxFlags & 0x80) { // chroma noise suppressor
         GBS::VDS_NS_BYPS::write(0);
     }
+    if (rto->crispMode) { // crisp macro wins over individual fx/peaking
+        applyCrispMode(1);
+    }
     /*if (uopt->wantTap6) { GBS::VDS_TAP6_BYPS::write(0); }
   else {
     GBS::VDS_TAP6_BYPS::write(1);
@@ -1605,6 +1608,51 @@ void doPostPresetLoadSteps()
     }
     // presetPreference = OutputCustomized may fail to load (missing) preset file and arrive here with defaults
     SerialM.println("\n");
+}
+
+// TAP6 bypass with MADPT delay compensation, only touching the delay when
+// the bypass state actually changes ('!' and ';' share this so repeated
+// toggles don't accumulate delay drift).
+void setTap6Bypass(uint8_t on)
+{
+    typedef TV5725<GBS_ADDR> GBS;
+    if (GBS::VDS_TAP6_BYPS::read() != (uint16_t)on) {
+        GBS::VDS_TAP6_BYPS::write(on);
+        GBS::MADPT_Y_DELAY_UV_DELAY::write(
+            GBS::MADPT_Y_DELAY_UV_DELAY::read() + (on ? 1 : -1));
+    }
+}
+
+// One-touch "crisp pixel" macro: bypasses the 6-tap scaler filter, boosts
+// all five luma peaking bands, raises coring so the peaking acts on real
+// edges instead of amplifying noise, and steepens luma/chroma step
+// response. Restores preset-like values when switched off.
+void applyCrispMode(uint8_t on)
+{
+    typedef TV5725<GBS_ADDR> GBS;
+    if (on) {
+        setTap6Bypass(1);
+        GBS::VDS_PK_LB_GAIN::write(0x2C);
+        GBS::VDS_PK_LH_GAIN::write(0x30);
+        GBS::VDS_PK_HL_GAIN::write(0x20);
+        GBS::VDS_PK_HB_GAIN::write(0x40);
+        GBS::VDS_PK_HH_GAIN::write(0x18);
+        GBS::VDS_PK_LB_CORE::write(1);
+        GBS::VDS_PK_LH_CORE::write(1);
+        GBS::VDS_STEP_GAIN::write(0x8);
+        GBS::VDS_UV_STEP_BYPS::write(0);
+    } else {
+        setTap6Bypass(0);
+        GBS::VDS_PK_LB_GAIN::write(0x16);
+        GBS::VDS_PK_LH_GAIN::write(0x18);
+        GBS::VDS_PK_HL_GAIN::write(0x10);
+        GBS::VDS_PK_HB_GAIN::write(0x20);
+        GBS::VDS_PK_HH_GAIN::write(0x0A);
+        GBS::VDS_PK_LB_CORE::write(0);
+        GBS::VDS_PK_LH_CORE::write(0);
+        GBS::VDS_STEP_GAIN::write(1);
+        GBS::VDS_UV_STEP_BYPS::write(0); // s3_2B=0x11 -> active by default
+    }
 }
 
 void setOutModeHdBypass(bool regsInitialized)

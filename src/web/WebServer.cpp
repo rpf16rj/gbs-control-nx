@@ -95,6 +95,8 @@ static struct {
     uint8_t fifoFlags; // STATUS_MEM_FF_* FIFO health byte
     uint16_t outVtotal; // STATUS_VDS_VERT_COUNT - live output lines
     uint16_t glbNoise;  // VDS_GLB_NOISE - global noise estimate
+    uint8_t stepGain;   // VDS_STEP_GAIN
+    uint8_t pkCore;     // VDS_PK_LB_CORE (coring level)
     float srcHz;
 } apiTel;
 
@@ -121,6 +123,8 @@ void updateApiTelemetry()
     apiTel.fifoFlags = GBS::STATUS_13::read();
     apiTel.outVtotal = GBS::STATUS_VDS_VERT_COUNT::read();
     apiTel.glbNoise = GBS::VDS_GLB_NOISE::read();
+    apiTel.stepGain = GBS::VDS_STEP_GAIN::read();
+    apiTel.pkCore = GBS::VDS_PK_LB_CORE::read();
 
     // getSourceFieldRate() drives the debug pin / test bus, so keep it slow
     if (rto->sourceDisconnected || !apiTel.vsActive) {
@@ -687,6 +691,12 @@ void startWebserver()
         json += apiTel.outVtotal;
         json += F(",\"noise\":");
         json += apiTel.glbNoise;
+        json += F(",\"crisp\":");
+        json += (rto->crispMode ? F("true") : F("false"));
+        json += F(",\"step\":");
+        json += apiTel.stepGain;
+        json += F(",\"core\":");
+        json += apiTel.pkCore;
         json += F(",\"last_reg\":");
         json += apiLastRegRead;
         json += F("}");

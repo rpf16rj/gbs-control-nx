@@ -1134,7 +1134,7 @@ const updateStatusInfo = () => {
     fetch(`/api/v1/status?${+new Date()}`)
         .then((r) => r.json())
         .then((s) => {
-        var _a;
+        var _a, _b;
         const el = document.getElementById("gbsInfoText");
         if (!el) {
             return;
@@ -1189,6 +1189,9 @@ const updateStatusInfo = () => {
         setLabel("gbsLblUv", `UV Flip ${s.fx & 0x20 ? "On" : "Off"}`);
         setLabel("gbsLblCc", `Color Corr ${s.fx & 0x40 ? "On" : "Off"}`);
         setLabel("gbsLblNs", `Chroma NS ${s.fx & 0x80 ? "On" : "Off"}`);
+        setLabel("gbsLblCrisp", `Crisp ${s.crisp ? "On" : "Off"}`);
+        setLabel("gbsLblStep", `Step 0x${((_b = s.step) !== null && _b !== void 0 ? _b : 0).toString(16)}`);
+        setLabel("gbsLblCore", `Coring ${s.core}`);
     })
         .catch(() => { });
 };

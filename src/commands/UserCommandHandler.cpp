@@ -804,10 +804,7 @@ void handleType2Command(char argument)
             // so they stay untouched. Preset reapply resets TAP6 - the
             // state is restored via rto->interpBypass.
             rto->interpBypass = !rto->interpBypass;
-            GBS::VDS_TAP6_BYPS::write(rto->interpBypass);
-            // delay compensation copied from 't' (tap6 toggle)
-            GBS::MADPT_Y_DELAY_UV_DELAY::write(
-                GBS::MADPT_Y_DELAY_UV_DELAY::read() + (rto->interpBypass ? 1 : -1));
+            setTap6Bypass(rto->interpBypass);
             SerialM.print(F("interp bypass: "));
             SerialM.println(rto->interpBypass ? F("on (tap6)") : F("off"));
         } break;
@@ -883,6 +880,37 @@ void handleType2Command(char argument)
             GBS::VDS_NS_BYPS::write(on ? 0 : 1);
             SerialM.print(F("chroma noise supp: "));
             SerialM.println(on ? F("on") : F("off"));
+        } break;
+        case ';': {
+            // "crisp pixel" macro: tap6 bypass + 5-band peaking boost +
+            // coring against noise + stronger step response
+            rto->crispMode = !rto->crispMode;
+            applyCrispMode(rto->crispMode);
+            SerialM.print(F("crisp mode: "));
+            SerialM.println(rto->crispMode ? F("on") : F("off"));
+        } break;
+        case ':': {
+            // step response strength (3_2B b0-3): steeper luma edges
+            static const uint8_t sg[4] = {1, 4, 8, 0xF};
+            static uint8_t sgIdx = 0;
+            sgIdx = (sgIdx + 1) & 3;
+            GBS::VDS_STEP_GAIN::write(sg[sgIdx]);
+            SerialM.print(F("step gain: 0x"));
+            SerialM.println(sg[sgIdx], HEX);
+        } break;
+        case '<': {
+            // peaking coring on all 5 bands: higher values sharpen only
+            // strong edges, rejecting noise amplification
+            static const uint8_t coreLv[4] = {0, 1, 2, 4};
+            static uint8_t coreIdx = 0;
+            coreIdx = (coreIdx + 1) & 3;
+            GBS::VDS_PK_LB_CORE::write(coreLv[coreIdx]);
+            GBS::VDS_PK_LH_CORE::write(coreLv[coreIdx]);
+            GBS::VDS_PK_HL_CORE::write(coreLv[coreIdx]);
+            GBS::VDS_PK_HB_CORE::write(coreLv[coreIdx]);
+            GBS::VDS_PK_HH_CORE::write(coreLv[coreIdx]);
+            SerialM.print(F("peak coring: "));
+            SerialM.println(coreLv[coreIdx]);
         } break;
         default:
             break;

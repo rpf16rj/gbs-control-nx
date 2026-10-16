@@ -104,6 +104,7 @@ struct runTimeOptions
     uint8_t fxFlags;      // REA effects: bit0 NR, bit1 BLEV, bit2 WLEV,
                           // bit3 blue-stretch, bit4 vpk (vert+chroma peaking),
                           // bit5 uv-flip, bit6 color-correct C1/C2, bit7 NS
+    uint8_t crispMode;    // ';': one-touch crisp-pixel macro
 };
 // remember adc options across presets
 struct adcOptions
