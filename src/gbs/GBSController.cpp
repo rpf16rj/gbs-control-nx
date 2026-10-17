@@ -1711,6 +1711,8 @@ void setCrtMode(uint8_t on)
         rto->crtSavedPkGain[4] = GBS::VDS_PK_HH_GAIN::read();
         rto->crtSavedViir = GBS::MADPT_VIIR_COEF::read();
         rto->crtSavedVtap2 = GBS::MADPT_VTAP2_COEFF::read();
+        rto->crtSavedInts = (GBS::VDS_1ST_INT_BYPS::read() & 1) |
+                            ((GBS::VDS_2ND_INT_BYPS::read() & 1) << 1);
         rto->crtMode = 1;
         if (!rto->scanlinesEnabled)
             enableScanlines();
@@ -1731,15 +1733,19 @@ void setCrtMode(uint8_t on)
         GBS::VDS_PK_HH_GAIN::write(0);
         GBS::VDS_STEP_GAIN::write(0);
         GBS::VDS_STEP_CLIP::write(3);
-        GBS::MADPT_VIIR_COEF::write(0x20);
-        GBS::MADPT_VTAP2_COEFF::write(0xC);
+        GBS::MADPT_VIIR_COEF::write(0x40);
+        GBS::MADPT_VTAP2_COEFF::write(0xF);
+        // horizontal blend (MiSTer "blend edge" style): unbypass the two
+        // input-path interpolators so adjacent points melt together
+        GBS::VDS_1ST_INT_BYPS::write(0);
+        GBS::VDS_2ND_INT_BYPS::write(0);
         // grille stripes at the offset the user preferred (-1)
         GBS::VDS_HSCALE::write(rto->crtSavedHscale - 1);
         rto->maskHscaleBase = rto->crtSavedHscale;
         rto->maskMoireOff = -1;
-        // user's preferred look: +4 bright, +4 contrast, +2 sat
-        rto->picBright += 4;
-        rto->picContrast += 4;
+        // user's preferred look: +2 bright, +2 contrast, +2 sat
+        rto->picBright += 2;
+        rto->picContrast += 2;
         rto->picSat += 2;
         applyPicAdjust();
     } else {
@@ -1767,6 +1773,8 @@ void setCrtMode(uint8_t on)
         GBS::VDS_PK_HH_GAIN::write(rto->crtSavedPkGain[4]);
         GBS::MADPT_VIIR_COEF::write(rto->crtSavedViir);
         GBS::MADPT_VTAP2_COEFF::write(rto->crtSavedVtap2);
+        GBS::VDS_1ST_INT_BYPS::write(rto->crtSavedInts & 1);
+        GBS::VDS_2ND_INT_BYPS::write((rto->crtSavedInts >> 1) & 1);
         rto->picSat = rto->crtSavedSat;
         rto->picContrast = rto->crtSavedContrast;
         rto->picBright = rto->crtSavedBright;

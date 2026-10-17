@@ -135,6 +135,7 @@ struct runTimeOptions
     uint8_t crtSavedStepClip;
     uint8_t crtSavedViir;
     uint8_t crtSavedVtap2;
+    uint8_t crtSavedInts;
     uint8_t crtSavedPkGain[5];
 };
 // remember adc options across presets
