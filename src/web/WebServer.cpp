@@ -708,6 +708,14 @@ void startWebserver()
         json += apiTel.pkCore;
         json += F(",\"osr\":");
         json += rto->osr;
+        json += F(",\"bright\":");
+        json += rto->picBright;
+        json += F(",\"contrast\":");
+        json += rto->picContrast;
+        json += F(",\"sat\":");
+        json += rto->picSat;
+        json += F(",\"hue\":");
+        json += rto->picHue;
         json += F(",\"int_out\":");
         json += (apiTel.dfieldEn ? F("true") : F("false"));
         json += F(",\"vds_field\":");

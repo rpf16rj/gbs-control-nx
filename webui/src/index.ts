@@ -1473,6 +1473,10 @@ const updateStatusInfo = () => {
       setLabel("gbsLblPhAdc", `Ph ADC ${s.phase_adc} +`);
       setLabel("gbsLblPhSp", `Ph SP ${s.phase_sp} +`);
       setLabel("gbsLblInt", `480i Out ${s.int_out ? "On" : "Off"}`);
+      setLabel("gbsLblBright", `Bright ${s.bright ?? 0}`);
+      setLabel("gbsLblContr", `Contr ${s.contrast ?? 0}`);
+      setLabel("gbsLblSat", `Sat ${s.sat ?? 0}`);
+      setLabel("gbsLblHue", `Hue ${s.hue ?? 0}`);
     })
     .catch(() => {});
 };

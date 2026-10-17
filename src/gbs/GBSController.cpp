@@ -1213,56 +1213,13 @@ void doPostPresetLoadSteps()
         GBS::VDS_PK_Y_H_BYPS::write(1);
     }
 
-    // unused now - unless the user bypassed the scaler filter ('!' cmd)
-    GBS::VDS_TAP6_BYPS::write(rto->interpBypass ? 1 : 0);
+    // Sync experimental/effect flags FROM the freshly loaded registers.
+    // Registers are the single source of truth: a saved profile restores the
+    // effects it was saved with, a factory preset resets them. Nothing is
+    // persisted across reboots outside of preset slots / user prefs.
+    syncExperimentalStateFromRegs();
+    applyPicAdjust(); // re-apply picture deltas over the new preset's bases
 
-    // re-apply user SVM level ('*' cmd) - preset arrays reset these regs
-    if (rto->svmGain) {
-        GBS::DAC_RGBS_SPD::write(0);
-        GBS::VDS_SVM_GAIN::write(rto->svmGain);
-        GBS::VDS_SVM_2ND_BYPS::write(0);
-        GBS::VDS_SVM_VCLK_DELAY::write(4);
-        GBS::VDS_SVM_OFFSET::write(0x20);
-    }
-
-    // re-apply REA-discovered user effects (preset arrays bypass them all)
-    if (rto->fxFlags & 0x01) { // noise reduction (Y + C paths)
-        GBS::VDS_NR_Y_BYPS::write(0);
-        GBS::VDS_NR_C_BYPS::write(0);
-    }
-    if (rto->fxFlags & 0x02) { // black level expansion
-        GBS::VDS_BLEV_BYPS::write(0);
-    }
-    if (rto->fxFlags & 0x04) { // white level expansion
-        GBS::VDS_W_LEV_BYPS::write(0);
-    }
-    if (rto->fxFlags & 0x08) { // blue stretch
-        GBS::VDS_BLUE_BYPS::write(0);
-    }
-    if (rto->fxFlags & 0x10) { // vertical + chroma peaking
-        GBS::VDS_PK_Y_V_BYPS::write(0);
-        GBS::VDS_C_VPK_BYPS::write(0);
-    }
-    if (rto->fxFlags & 0x20) { // U/V swap
-        GBS::VDS_UV_FLIP::write(1);
-    }
-    if (rto->fxFlags & 0x40) { // color-correction engines C1 + C2
-        GBS::VDS_C1_BYPS::write(0);
-        GBS::VDS_C2_BYPS::write(0);
-    }
-    if (rto->fxFlags & 0x80) { // chroma noise suppressor
-        GBS::VDS_NS_BYPS::write(0);
-    }
-    if (rto->crispMode) { // crisp macro wins over individual fx/peaking
-        applyCrispMode(1);
-    }
-    /*if (uopt->wantTap6) { GBS::VDS_TAP6_BYPS::write(0); }
-  else {
-    GBS::VDS_TAP6_BYPS::write(1);
-    if (!isCustomPreset) {
-      GBS::MADPT_Y_DELAY_UV_DELAY::write(GBS::MADPT_Y_DELAY_UV_DELAY::read() + 1);
-    }
-  }*/
 
     if (uopt->wantStepResponse) {
         // step response requested, but exclude 1080p presets
@@ -1653,6 +1610,73 @@ void applyCrispMode(uint8_t on)
         GBS::VDS_STEP_GAIN::write(1);
         GBS::VDS_UV_STEP_BYPS::write(0); // s3_2B=0x11 -> active by default
     }
+}
+
+// After every preset load: mirror rto's experimental-state flags off the
+// registers that were just written, and capture the proc-amp base values
+// the loaded preset defines. Saved slots already contain the fx register
+// state, so loading a profile restores it (and the labels stay honest);
+// factory presets mean "everything experimental off".
+void syncExperimentalStateFromRegs()
+{
+    typedef TV5725<GBS_ADDR> GBS;
+    rto->interpBypass = GBS::VDS_TAP6_BYPS::read() ? 1 : 0;
+    rto->svmGain = GBS::VDS_SVM_2ND_BYPS::read() ? 0 : (uint8_t)GBS::VDS_SVM_GAIN::read();
+    uint8_t fx = 0;
+    if (!GBS::VDS_NR_Y_BYPS::read())   fx |= 0x01; // noise reduction
+    if (!GBS::VDS_BLEV_BYPS::read())   fx |= 0x02; // black level expansion
+    if (!GBS::VDS_W_LEV_BYPS::read())  fx |= 0x04; // white level expansion
+    if (!GBS::VDS_BLUE_BYPS::read())   fx |= 0x08; // blue stretch
+    if (!GBS::VDS_PK_Y_V_BYPS::read()) fx |= 0x10; // vertical peaking
+    if (GBS::VDS_UV_FLIP::read())      fx |= 0x20; // U/V swap
+    if (!GBS::VDS_C1_BYPS::read())     fx |= 0x40; // color correctors
+    if (!GBS::VDS_NS_BYPS::read())     fx |= 0x80; // chroma noise suppressor
+    rto->fxFlags = fx;
+    rto->chromaShift = (GBS::VDS_U_DELAY::read() & 1) |
+                       ((GBS::VDS_V_DELAY::read() & 1) << 1);
+    rto->outSyncSel = GBS::OUT_SYNC_SEL::read() & 3;
+    rto->maskMoireOff = 0;
+    rto->maskIdx = 0;
+    rto->maskHscaleBase = 0xffff;
+    // crisp heuristic: tap6 bypassed + steep step + coring set
+    rto->crispMode = (rto->interpBypass && GBS::VDS_STEP_GAIN::read() >= 8 &&
+                      GBS::VDS_PK_LB_CORE::read() > 0) ? 1 : 0;
+    // proc-amp deltas reset to neutral against this preset's bases
+    rto->yGainBase = (uint8_t)GBS::VDS_Y_GAIN::read();
+    rto->yOfstBase = (int8_t)GBS::VDS_Y_OFST::read();
+    rto->ucosBase = (uint8_t)GBS::VDS_UCOS_GAIN::read();
+    rto->vcosBase = (uint8_t)GBS::VDS_VCOS_GAIN::read();
+    rto->usinBase = (int8_t)GBS::VDS_USIN_GAIN::read();
+    rto->vsinBase = (int8_t)GBS::VDS_VSIN_GAIN::read();
+    rto->picBright = rto->picContrast = rto->picSat = rto->picHue = 0;
+}
+
+// Picture proc-amp on the chip's YUV matrix (s3_35..3_3C):
+//   contrast: VDS_Y_GAIN scaled around the preset base
+//   brightness: VDS_Y_OFST additive (signed)
+//   saturation: UCOS/VCOS scaled together, preserving the U/V ratio
+//   hue: inject sin terms into the UV rotation (small-angle approx)
+void applyPicAdjust()
+{
+    typedef TV5725<GBS_ADDR> GBS;
+    int v = rto->yGainBase + rto->picContrast * 8;
+    GBS::VDS_Y_GAIN::write(v < 0 ? 0 : v > 255 ? 255 : v);
+    v = rto->yOfstBase + rto->picBright * 4;
+    if (v > 127) v = 127;
+    if (v < -128) v = -128;
+    GBS::VDS_Y_OFST::write((uint8_t)(int8_t)v);
+    int u = (rto->ucosBase * (8 + rto->picSat)) / 8;
+    int w = (rto->vcosBase * (8 + rto->picSat)) / 8;
+    GBS::VDS_UCOS_GAIN::write(u < 0 ? 0 : u > 255 ? 255 : u);
+    GBS::VDS_VCOS_GAIN::write(w < 0 ? 0 : w > 255 ? 255 : w);
+    v = rto->usinBase + (rto->ucosBase * rto->picHue) / 16;
+    if (v > 127) v = 127;
+    if (v < -128) v = -128;
+    GBS::VDS_USIN_GAIN::write((uint8_t)(int8_t)v);
+    v = rto->vsinBase + (rto->vcosBase * rto->picHue) / 16;
+    if (v > 127) v = 127;
+    if (v < -128) v = -128;
+    GBS::VDS_VSIN_GAIN::write((uint8_t)(int8_t)v);
 }
 
 void setOutModeHdBypass(bool regsInitialized)

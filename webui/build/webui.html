@@ -1044,6 +1044,121 @@ section[name="alert"] {
                 <div>crop</div>
               </button>
             </div>
+            <!-- symmetric crop, MiSTer style: one tap cuts both sides -->
+            <div class="gbs-flex">
+              <button
+                gbs-message="B"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_less</div>
+                <div>Crop H +</div>
+              </button>
+              <button
+                gbs-message="A"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_more</div>
+                <div>Crop H −</div>
+              </button>
+            </div>
+            <div class="gbs-flex">
+              <button
+                gbs-message="D"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_less</div>
+                <div>Crop V +</div>
+              </button>
+              <button
+                gbs-message="C"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_more</div>
+                <div>Crop V −</div>
+              </button>
+            </div>
+          </fieldset>
+          <fieldset class="gbs-fieldset">
+            <legend class="gbs-fieldset__legend">
+              <div class="gbs-icon">tune</div>
+              <div>Picture</div>
+            </legend>
+            <!-- proc-amp deltas applied over the active preset's YUV matrix;
+             saved into a profile like any other register state -->
+            <div class="gbs-flex">
+              <button
+                gbs-message="{"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">brightness_low</div>
+                <div id="gbsLblBright">Bright −</div>
+              </button>
+              <button
+                gbs-message="}"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">brightness_high</div>
+                <div>Bright +</div>
+              </button>
+              <button
+                gbs-message="["
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">contrast</div>
+                <div id="gbsLblContr">Contr −</div>
+              </button>
+              <button
+                gbs-message="^"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">contrast</div>
+                <div>Contr +</div>
+              </button>
+            </div>
+            <div class="gbs-flex">
+              <button
+                gbs-message="$"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">invert_colors_off</div>
+                <div id="gbsLblSat">Sat −</div>
+              </button>
+              <button
+                gbs-message="|"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">invert_colors</div>
+                <div>Sat +</div>
+              </button>
+              <button
+                gbs-message="&quot;"
+                gbs-message-type="user"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">palette</div>
+                <div id="gbsLblHue">Hue</div>
+              </button>
+            </div>
           </fieldset>
           <fieldset class="gbs-fieldset gbs-controls__desktop">
             <legend class="gbs-fieldset__legend">
@@ -3718,7 +3833,7 @@ const updateStatusInfo = () => {
     fetch(`/api/v1/status?${+new Date()}`)
         .then((r) => r.json())
         .then((s) => {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         const el = document.getElementById("gbsInfoText");
         if (!el) {
             return;
@@ -3782,6 +3897,10 @@ const updateStatusInfo = () => {
         setLabel("gbsLblPhAdc", `Ph ADC ${s.phase_adc} +`);
         setLabel("gbsLblPhSp", `Ph SP ${s.phase_sp} +`);
         setLabel("gbsLblInt", `480i Out ${s.int_out ? "On" : "Off"}`);
+        setLabel("gbsLblBright", `Bright ${(_f = s.bright) !== null && _f !== void 0 ? _f : 0}`);
+        setLabel("gbsLblContr", `Contr ${(_g = s.contrast) !== null && _g !== void 0 ? _g : 0}`);
+        setLabel("gbsLblSat", `Sat ${(_h = s.sat) !== null && _h !== void 0 ? _h : 0}`);
+        setLabel("gbsLblHue", `Hue ${(_j = s.hue) !== null && _j !== void 0 ? _j : 0}`);
     })
         .catch(() => { });
 };

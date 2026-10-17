@@ -704,27 +704,23 @@ void handleType2Command(char argument)
             GBS::OUT_SYNC_SEL::write(rto->outSyncSel);
             SerialM.print(F("OUT_SYNC_SEL: "));
             SerialM.println(rto->outSyncSel);
-            saveUserPrefs();
             } break;
         case 'd': {
             // "aperture grille" experiment: deliberate offsets on VDS_HSCALE
             // create periodic column brightness variation (vertical dark
             // stripes) - the horizontal equivalent of what scanlines do with
             // line interpolation. Cycle through +/- offsets back to normal.
-            static uint8_t maskIdx = 0;
-            static uint16_t hscaleBase = 0xffff;
             static const int8_t offs[8] = {0, 1, 2, 4, -1, -2, -4, -8};
-            maskIdx = (maskIdx + 1) % 8;
-            if (maskIdx == 1 || hscaleBase == 0xffff) {
-                hscaleBase = GBS::VDS_HSCALE::read(); // capture preset's value
+            rto->maskIdx = (rto->maskIdx + 1) % 8;
+            if (rto->maskIdx == 1 || rto->maskHscaleBase == 0xffff) {
+                rto->maskHscaleBase = GBS::VDS_HSCALE::read(); // capture preset's value
             }
-            rto->maskMoireOff = offs[maskIdx];
-            GBS::VDS_HSCALE::write((uint16_t)((int)hscaleBase + rto->maskMoireOff));
+            rto->maskMoireOff = offs[rto->maskIdx];
+            GBS::VDS_HSCALE::write((uint16_t)((int)rto->maskHscaleBase + rto->maskMoireOff));
             SerialM.print(F("mask moire off: "));
             SerialM.print((int)rto->maskMoireOff);
             SerialM.print(F(" hscale: 0x"));
             SerialM.println(GBS::VDS_HSCALE::read(), HEX);
-            saveUserPrefs();
             } break;
         case 'Y': {
             // composite-style chroma shift (color fringing, mask-like effect):
@@ -736,7 +732,6 @@ void handleType2Command(char argument)
             SerialM.print(rto->chromaShift & 1);
             SerialM.print(F(","));
             SerialM.println((rto->chromaShift >> 1) & 1);
-            saveUserPrefs();
             } break;
         case 'I': {
             // shift image left (move display window, keep size)
@@ -799,7 +794,6 @@ void handleType2Command(char argument)
             GBS::VDS_SVM_OFFSET::write(on ? 0x20 : 0);
             SerialM.print(F("SVM gain: 0x"));
             SerialM.println(rto->svmGain, HEX);
-            saveUserPrefs();
             } break;
         case '!': {
             // Real scaler-filter bypass: VDS_TAP6_BYPS (3_24 bit3) disables
@@ -811,20 +805,27 @@ void handleType2Command(char argument)
             setTap6Bypass(rto->interpBypass);
             SerialM.print(F("interp bypass: "));
             SerialM.println(rto->interpBypass ? F("on (tap6)") : F("off"));
-            saveUserPrefs();
             } break;
         // --- REA-discovered blocks (preset arrays bypass them; fxFlags bits
         // are re-applied in doPostPresetLoadSteps) ---
         // (command chars chosen from URL-unreserved set: - _ ~ ( ))
         case '-': {
-            // noise reduction: Y + C paths (3_52 b4/b5, bypassed in presets)
+            // noise reduction: Y + C paths + diff LPF + motion-adaptive
+            // threshold (3_52 b4-b7, bypassed in presets). Also enables
+            // still-region processing driven by the global noise estimate.
             rto->fxFlags ^= 0x01;
             uint8_t on = rto->fxFlags & 0x01;
             GBS::VDS_NR_Y_BYPS::write(on ? 0 : 1);
             GBS::VDS_NR_C_BYPS::write(on ? 0 : 1);
+            GBS::VDS_NR_DIF_LPF5_BYPS::write(on ? 0 : 1);
+            GBS::VDS_NR_MI_TH_EN::write(on ? 1 : 0);
+            GBS::VDS_NR_EN_GLB_STILL::write(on ? 1 : 0);
+            if (on) {
+                GBS::VDS_NR_STILL_GAIN::write(6);
+                GBS::VDS_NR_MI_GAIN::write(4);
+            }
             SerialM.print(F("noise reduction: "));
             SerialM.println(on ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case '_': {
             // black level expansion (3_2A b0, bypassed in presets;
@@ -834,7 +835,6 @@ void handleType2Command(char argument)
             GBS::VDS_BLEV_BYPS::write(on ? 0 : 1);
             SerialM.print(F("black expand: "));
             SerialM.println(on ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case '~': {
             // white level expansion (3_56 b7, bypassed; gain s3_58)
@@ -843,7 +843,6 @@ void handleType2Command(char argument)
             GBS::VDS_W_LEV_BYPS::write(on ? 0 : 1);
             SerialM.print(F("white expand: "));
             SerialM.println(on ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case '(': {
             // blue stretch (3_73 b3, bypassed)
@@ -852,7 +851,6 @@ void handleType2Command(char argument)
             GBS::VDS_BLUE_BYPS::write(on ? 0 : 1);
             SerialM.print(F("blue stretch: "));
             SerialM.println(on ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case ')': {
             // vertical + chroma peaking (3_4E b1/b3, bypassed;
@@ -863,7 +861,6 @@ void handleType2Command(char argument)
             GBS::VDS_C_VPK_BYPS::write(on ? 0 : 1);
             SerialM.print(F("vert/chroma peaking: "));
             SerialM.println(on ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case 'y': {
             // U/V swap - hue inversion (3_24 b0). Pure fun/reversible.
@@ -872,7 +869,6 @@ void handleType2Command(char argument)
             GBS::VDS_UV_FLIP::write(on);
             SerialM.print(F("uv flip: "));
             SerialM.println(on ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case 'G': {
             // color-correction engines C1 + C2 (3_65 b5 / 3_6B b5, bypassed;
@@ -883,7 +879,6 @@ void handleType2Command(char argument)
             GBS::VDS_C2_BYPS::write(on ? 0 : 1);
             SerialM.print(F("color correction: "));
             SerialM.println(on ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case ',': {
             // chroma noise suppressor (3_60 b2, bypassed)
@@ -892,7 +887,6 @@ void handleType2Command(char argument)
             GBS::VDS_NS_BYPS::write(on ? 0 : 1);
             SerialM.print(F("chroma noise supp: "));
             SerialM.println(on ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case ';': {
             // "crisp pixel" macro: tap6 bypass + 5-band peaking boost +
@@ -901,7 +895,6 @@ void handleType2Command(char argument)
             applyCrispMode(rto->crispMode);
             SerialM.print(F("crisp mode: "));
             SerialM.println(rto->crispMode ? F("on") : F("off"));
-            saveUserPrefs();
             } break;
         case ':': {
             // step response strength (3_2B b0-3): steeper luma edges
@@ -965,11 +958,23 @@ void handleType2Command(char argument)
             // cycle ADC oversampling 1x -> 2x -> 4x -> 1x
             // higher osr = finer phase granularity; the KS register limits
             // what's possible, setOverSampleRatio() auto-decrements.
+            // 4x can destabilize sampling on some sources: if hsync activity
+            // is gone after settling, revert to the previous ratio.
+            uint8_t prev = rto->osr;
             uint8_t next = (rto->osr == 1) ? 2 : (rto->osr == 2) ? 4 : 1;
             setOverSampleRatio(next, false); // apply now
             latchPLLAD();
             delay(60); // let the pll settle before re-measuring phase
             optimizePhaseSP();
+            delay(900);
+            if (rto->osr != prev && rto->videoStandardInput != 0 &&
+                GBS::STATUS_SYNC_PROC_HSACT::read() == 0) {
+                SerialM.println(F("sync lost after oversample - reverting"));
+                setOverSampleRatio(prev, false);
+                latchPLLAD();
+                delay(60);
+                optimizePhaseSP();
+            }
             SerialM.print(F("oversample: "));
             SerialM.print(rto->osr);
             SerialM.print(F("x (requested "));
@@ -991,6 +996,52 @@ void handleType2Command(char argument)
             SerialM.print(GBS::STATUS_VDS_FIELD::read());
             SerialM.print(F(" out_vt="));
             SerialM.println(GBS::STATUS_VDS_VERT_COUNT::read());
+        } break;
+        // --- picture proc-amp on the chip's YUV matrix (s3_35..3_3C).
+        // Deltas (-8..8) are applied over each preset's base values;
+        // saved into a profile like any other register state. ---
+        case '{':
+        case '}': {
+            rto->picBright += (argument == '}') ? 1 : -1;
+            if (rto->picBright > 8) rto->picBright = 8;
+            if (rto->picBright < -8) rto->picBright = -8;
+            applyPicAdjust();
+            SerialM.print(F("brightness: "));
+            SerialM.println(rto->picBright);
+        } break;
+        case '[':
+        case '^': {
+            rto->picContrast += (argument == '^') ? 1 : -1;
+            if (rto->picContrast > 8) rto->picContrast = 8;
+            if (rto->picContrast < -8) rto->picContrast = -8;
+            applyPicAdjust();
+            SerialM.print(F("contrast: "));
+            SerialM.println(rto->picContrast);
+        } break;
+        case '$':
+        case '|': {
+            rto->picSat += (argument == '|') ? 1 : -1;
+            if (rto->picSat > 8) rto->picSat = 8;
+            if (rto->picSat < -8) rto->picSat = -8;
+            applyPicAdjust();
+            SerialM.print(F("saturation: "));
+            SerialM.println(rto->picSat);
+        } break;
+        case '"': {
+            // hue as a one-button cycle through a signed range (derived
+            // from the current value so preset reloads can't desync it)
+            static const int8_t hues[7] = {0, 3, 6, 8, -8, -6, -3};
+            uint8_t idx = 0;
+            for (uint8_t i = 0; i < 7; i++) {
+                if (hues[i] == rto->picHue) {
+                    idx = i;
+                    break;
+                }
+            }
+            rto->picHue = hues[(idx + 1) % 7];
+            applyPicAdjust();
+            SerialM.print(F("hue: "));
+            SerialM.println(rto->picHue);
         } break;
         default:
             break;

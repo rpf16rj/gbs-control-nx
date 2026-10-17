@@ -1134,7 +1134,7 @@ const updateStatusInfo = () => {
     fetch(`/api/v1/status?${+new Date()}`)
         .then((r) => r.json())
         .then((s) => {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         const el = document.getElementById("gbsInfoText");
         if (!el) {
             return;
@@ -1198,6 +1198,10 @@ const updateStatusInfo = () => {
         setLabel("gbsLblPhAdc", `Ph ADC ${s.phase_adc} +`);
         setLabel("gbsLblPhSp", `Ph SP ${s.phase_sp} +`);
         setLabel("gbsLblInt", `480i Out ${s.int_out ? "On" : "Off"}`);
+        setLabel("gbsLblBright", `Bright ${(_f = s.bright) !== null && _f !== void 0 ? _f : 0}`);
+        setLabel("gbsLblContr", `Contr ${(_g = s.contrast) !== null && _g !== void 0 ? _g : 0}`);
+        setLabel("gbsLblSat", `Sat ${(_h = s.sat) !== null && _h !== void 0 ? _h : 0}`);
+        setLabel("gbsLblHue", `Hue ${(_j = s.hue) !== null && _j !== void 0 ? _j : 0}`);
     })
         .catch(() => { });
 };

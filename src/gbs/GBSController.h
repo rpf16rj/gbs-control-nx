@@ -21,6 +21,8 @@ void unfreezeVideo();
 void freezeVideo();
 void setTap6Bypass(uint8_t on);
 void applyCrispMode(uint8_t on);
+void syncExperimentalStateFromRegs();
+void applyPicAdjust();
 // getVideoMode(), getSyncPresent(), getStatus16SpHsStable(), getStatus00IfHsVsStable() are declared in VideoInput.h
 void setOverSampleRatio(uint8_t newRatio, boolean prepareOnly);
 void setOutModeHdBypass(bool regsInitialized);

@@ -105,6 +105,21 @@ struct runTimeOptions
                           // bit3 blue-stretch, bit4 vpk (vert+chroma peaking),
                           // bit5 uv-flip, bit6 color-correct C1/C2, bit7 NS
     uint8_t crispMode;    // ';': one-touch crisp-pixel macro
+    // mask-moire 'd' command state (kept in rto so a preset load can reset it)
+    uint8_t maskIdx;
+    uint16_t maskHscaleBase;
+    // picture proc-amp deltas (0 = neutral, range -8..8). Applied on top of
+    // per-preset base values captured after every preset load.
+    int8_t picBright;
+    int8_t picContrast;
+    int8_t picSat;
+    int8_t picHue;
+    uint8_t yGainBase;
+    int8_t yOfstBase;
+    uint8_t ucosBase;
+    uint8_t vcosBase;
+    int8_t usinBase;
+    int8_t vsinBase;
 };
 // remember adc options across presets
 struct adcOptions

@@ -349,6 +349,121 @@
                 <div>crop</div>
               </button>
             </div>
+            <!-- symmetric crop, MiSTer style: one tap cuts both sides -->
+            <div class="gbs-flex">
+              <button
+                gbs-message="B"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_less</div>
+                <div>Crop H +</div>
+              </button>
+              <button
+                gbs-message="A"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_more</div>
+                <div>Crop H −</div>
+              </button>
+            </div>
+            <div class="gbs-flex">
+              <button
+                gbs-message="D"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_less</div>
+                <div>Crop V +</div>
+              </button>
+              <button
+                gbs-message="C"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">unfold_more</div>
+                <div>Crop V −</div>
+              </button>
+            </div>
+          </fieldset>
+          <fieldset class="gbs-fieldset">
+            <legend class="gbs-fieldset__legend">
+              <div class="gbs-icon">tune</div>
+              <div>Picture</div>
+            </legend>
+            <!-- proc-amp deltas applied over the active preset's YUV matrix;
+             saved into a profile like any other register state -->
+            <div class="gbs-flex">
+              <button
+                gbs-message="{"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">brightness_low</div>
+                <div id="gbsLblBright">Bright −</div>
+              </button>
+              <button
+                gbs-message="}"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">brightness_high</div>
+                <div>Bright +</div>
+              </button>
+              <button
+                gbs-message="["
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">contrast</div>
+                <div id="gbsLblContr">Contr −</div>
+              </button>
+              <button
+                gbs-message="^"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">contrast</div>
+                <div>Contr +</div>
+              </button>
+            </div>
+            <div class="gbs-flex">
+              <button
+                gbs-message="$"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">invert_colors_off</div>
+                <div id="gbsLblSat">Sat −</div>
+              </button>
+              <button
+                gbs-message="|"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">invert_colors</div>
+                <div>Sat +</div>
+              </button>
+              <button
+                gbs-message="&quot;"
+                gbs-message-type="user"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">palette</div>
+                <div id="gbsLblHue">Hue</div>
+              </button>
+            </div>
           </fieldset>
           <fieldset class="gbs-fieldset gbs-controls__desktop">
             <legend class="gbs-fieldset__legend">

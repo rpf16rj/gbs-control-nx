@@ -449,19 +449,6 @@ void setup()
                 uopt->peakingLevel = 1;
             }
 
-            // #25-#31: experimental processing state (raw bytes).
-            // Restored into rto so the first doPostPresetLoadSteps() after
-            // a source connects reapplies them like manual toggles did.
-            if (f.available() >= 7) {
-                rto->fxFlags = (uint8_t)f.read();              // #25
-                rto->svmGain = (uint8_t)f.read();              // #26
-                rto->crispMode = (uint8_t)f.read() ? 1 : 0;    // #27
-                rto->interpBypass = (uint8_t)f.read() ? 1 : 0; // #28
-                rto->chromaShift = (uint8_t)f.read() & 3;      // #29
-                rto->outSyncSel = (uint8_t)f.read() & 3;       // #30
-                rto->maskMoireOff = (int8_t)f.read();          // #31
-            }
-
             f.close();
             syncReverseRotaryEncoderIsrMirror();
         }
