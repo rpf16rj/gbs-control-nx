@@ -464,6 +464,17 @@
                 <div id="gbsLblHue">Hue</div>
               </button>
             </div>
+            <div class="gbs-flex">
+              <button
+                gbs-message="B"
+                gbs-message-type="serial"
+                gbs-click="normal"
+                class="gbs-button gbs-button__control"
+              >
+                <div class="gbs-icon">tv</div>
+                <div id="gbsLblCrt">CRT</div>
+              </button>
+            </div>
           </fieldset>
           <fieldset class="gbs-fieldset gbs-controls__desktop">
             <legend class="gbs-fieldset__legend">
@@ -1631,15 +1642,6 @@
               </button>
             </div>
             <div class="gbs-flex gbs-margin__bottom--16">
-              <button
-                gbs-message="*"
-                gbs-message-type="user"
-                gbs-click="normal"
-                class="gbs-button gbs-button__control gbs-button__secondary"
-              >
-                <div class="gbs-icon">flare</div>
-                <div id="gbsLblSvm">SVM</div>
-              </button>
               <button
                 gbs-message="!"
                 gbs-message-type="user"

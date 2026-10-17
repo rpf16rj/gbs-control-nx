@@ -716,6 +716,8 @@ void startWebserver()
         json += rto->picSat;
         json += F(",\"hue\":");
         json += rto->picHue;
+        json += F(",\"crt\":");
+        json += (rto->crtMode ? F("true") : F("false"));
         json += F(",\"int_out\":");
         json += (apiTel.dfieldEn ? F("true") : F("false"));
         json += F(",\"vds_field\":");

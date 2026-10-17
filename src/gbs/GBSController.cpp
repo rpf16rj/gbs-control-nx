@@ -8,6 +8,7 @@
 #include "../clock/Si5351Manager.h"
 #include "../video/VideoInput.h"
 #include "../video/VideoTiming.h"
+#include "../video/Scanlines.h"
 #include "../storage/SlotManager.h"
 #include "../wifi/WiFiManager.h"
 #include "../menu/OLEDMenu.h"
@@ -1638,6 +1639,7 @@ void syncExperimentalStateFromRegs()
     rto->maskMoireOff = 0;
     rto->maskIdx = 0;
     rto->maskHscaleBase = 0xffff;
+    rto->crtMode = 0;
     // crisp heuristic: tap6 bypassed + steep step + coring set
     rto->crispMode = (rto->interpBypass && GBS::VDS_STEP_GAIN::read() >= 8 &&
                       GBS::VDS_PK_LB_CORE::read() > 0) ? 1 : 0;
@@ -1677,6 +1679,61 @@ void applyPicAdjust()
     if (v > 127) v = 127;
     if (v < -128) v = -128;
     GBS::VDS_VSIN_GAIN::write((uint8_t)(int8_t)v);
+}
+
+// One-click CRT look (serial '9'): composite of what the chip can actually
+// do - horizontal scanlines (MADPT mixing), vertical grille stripes via a
+// small VDS_HSCALE detune (periodic scaler-phase moire = column stripes),
+// slight chroma U delay for grille-style fringing, vertical+chroma peaking,
+// black expansion and a sat/contrast pop. Previous state is snapshotted
+// and restored on toggle-off.
+void setCrtMode(uint8_t on)
+{
+    typedef TV5725<GBS_ADDR> GBS;
+    if (on == rto->crtMode)
+        return;
+    if (on) {
+        rto->crtSavedScan = rto->scanlinesEnabled ? 1 : 0;
+        rto->crtSavedFx = rto->fxFlags;
+        rto->crtSavedChroma = rto->chromaShift;
+        rto->crtSavedSat = rto->picSat;
+        rto->crtSavedContrast = rto->picContrast;
+        rto->crtSavedHscale = GBS::VDS_HSCALE::read();
+        rto->crtMode = 1;
+        if (!rto->scanlinesEnabled)
+            enableScanlines();
+        GBS::VDS_PK_Y_V_BYPS::write(0);
+        GBS::VDS_C_VPK_BYPS::write(0);
+        GBS::VDS_BLEV_BYPS::write(0);
+        rto->fxFlags |= 0x12; // vpk + black expansion
+        GBS::VDS_U_DELAY::write(1);
+        rto->chromaShift |= 1;
+        GBS::VDS_HSCALE::write(rto->crtSavedHscale + 2); // grille stripes
+        rto->maskHscaleBase = rto->crtSavedHscale;
+        rto->maskMoireOff = 2;
+        rto->picSat += 1;
+        rto->picContrast += 1;
+        applyPicAdjust();
+    } else {
+        rto->crtMode = 0;
+        if (rto->crtSavedScan == 0 && rto->scanlinesEnabled)
+            disableScanlines();
+        // restore the two fx bits we forced on
+        rto->fxFlags = (rto->fxFlags & ~0x12) | (rto->crtSavedFx & 0x12);
+        GBS::VDS_PK_Y_V_BYPS::write((rto->fxFlags & 0x10) ? 0 : 1);
+        GBS::VDS_C_VPK_BYPS::write((rto->fxFlags & 0x10) ? 0 : 1);
+        GBS::VDS_BLEV_BYPS::write((rto->fxFlags & 0x02) ? 0 : 1);
+        rto->chromaShift = rto->crtSavedChroma;
+        GBS::VDS_U_DELAY::write(rto->chromaShift & 1);
+        GBS::VDS_V_DELAY::write((rto->chromaShift >> 1) & 1);
+        GBS::VDS_HSCALE::write(rto->crtSavedHscale);
+        rto->maskMoireOff = 0;
+        rto->picSat = rto->crtSavedSat;
+        rto->picContrast = rto->crtSavedContrast;
+        applyPicAdjust();
+    }
+    SerialM.print(F("crt mode: "));
+    SerialM.println(on ? F("on") : F("off"));
 }
 
 void setOutModeHdBypass(bool regsInitialized)

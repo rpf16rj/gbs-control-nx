@@ -775,26 +775,7 @@ void handleType2Command(char argument)
                 SerialM.println("limit");
             }
         } break;
-        case '*': {
-            // SVM (scan velocity modulation): analog-domain edge emphasis,
-            // the trick CRTs used for "bright crisp" edges. The chip powers
-            // it (DAC_RGBS_SPD=0) but the firmware never sets a gain.
-            // SVM needs a non-zero VCLK delay or the modulation has nothing
-            // to act on (that's why gain alone showed no visible effect).
-            // Cycle: off -> 0x40 -> 0x80 -> 0xC0
-            static const uint8_t svmGains[4] = {0x00, 0x40, 0x80, 0xC0};
-            static uint8_t svmIdx = 0;
-            svmIdx = (svmIdx + 1) & 3;
-            rto->svmGain = svmGains[svmIdx];
-            uint8_t on = rto->svmGain != 0;
-            GBS::DAC_RGBS_SPD::write(0); // keep SVM powered
-            GBS::VDS_SVM_GAIN::write(rto->svmGain);
-            GBS::VDS_SVM_2ND_BYPS::write(on ? 0 : 1);
-            GBS::VDS_SVM_VCLK_DELAY::write(on ? 4 : 0);
-            GBS::VDS_SVM_OFFSET::write(on ? 0x20 : 0);
-            SerialM.print(F("SVM gain: 0x"));
-            SerialM.println(rto->svmGain, HEX);
-            } break;
+
         case '!': {
             // Real scaler-filter bypass: VDS_TAP6_BYPS (3_24 bit3) disables
             // the 6-tap scaling filter -> hard pixel edges. Plain on/off;

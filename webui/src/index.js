@@ -367,6 +367,10 @@ const loadUser = (link) => {
     }
     return fetch(`http://${GBSControl.serverIP}/uc?${link}&nocache=${new Date().getTime()}`);
 };
+const loadSerial = (link) => {
+    // serial-command queue (/api/v1/cmd) - separate dispatch table from /uc
+    return fetch(`http://${GBSControl.serverIP}/api/v1/cmd?${link}&nocache=${new Date().getTime()}`);
+};
 /** SLOT management */
 const savePreset = () => {
     const currentSlot = document.querySelector('[gbs-role="slot"][active]');
@@ -907,6 +911,7 @@ const initGBSButtons = () => {
         user: loadUser,
         action: loadDoc,
         setSlot,
+        serial: loadSerial,
     };
     const buttons = nodelistToArray(document.querySelectorAll("[gbs-click]"));
     buttons.forEach((button) => {
@@ -1179,7 +1184,7 @@ const updateStatusInfo = () => {
         setLabel("gbsLblChroma", `Chroma ${s.chroma === 0 ? "Off" : s.chroma}`);
         setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
         setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
-        setLabel("gbsLblSvm", `SVM ${s.svm === 0 ? "Off" : "0x" + s.svm.toString(16)}`);
+        setLabel("gbsLblCrt", `CRT ${s.crt ? "On" : "Off"}`);
         setLabel("gbsLblInterp", `Interp Byp ${s.interp ? "On" : "Off"}`);
         setLabel("gbsLblNr", `NR ${s.fx & 0x01 ? "On" : "Off"}`);
         setLabel("gbsLblBlev", `Black Exp ${s.fx & 0x02 ? "On" : "Off"}`);

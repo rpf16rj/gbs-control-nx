@@ -120,6 +120,14 @@ struct runTimeOptions
     uint8_t vcosBase;
     int8_t usinBase;
     int8_t vsinBase;
+    // CRT one-click composite effect (serial '9'): snapshot + restore
+    uint8_t crtMode;
+    uint8_t crtSavedFx;
+    uint8_t crtSavedScan;
+    uint8_t crtSavedChroma;
+    int8_t crtSavedSat;
+    int8_t crtSavedContrast;
+    uint16_t crtSavedHscale;
 };
 // remember adc options across presets
 struct adcOptions
