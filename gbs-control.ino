@@ -1005,8 +1005,9 @@ void loop()
                 rto->allowUpdatesOTA = true;
                 break;
             case 'B':
-                // one-click CRT composite look (web UI "CRT" button)
-                setCrtMode(!rto->crtMode);
+                // one-click CRT composite look (web UI "CRT" button):
+                // cycles off -> mode 1 -> mode 2 -> off
+                setCrtMode((rto->crtMode + 1) % 3);
                 break;
             case 'G':
                 SerialM.print(F("Debug Pings "));

@@ -717,7 +717,7 @@ void startWebserver()
         json += F(",\"hue\":");
         json += rto->picHue;
         json += F(",\"crt\":");
-        json += (rto->crtMode ? F("true") : F("false"));
+        json += rto->crtMode;
         json += F(",\"sl_str\":");
         json += uopt->scanlineStrength;
         json += F(",\"int_out\":");

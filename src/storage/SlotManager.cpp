@@ -144,7 +144,8 @@ void savePresetToLittleFS()
 
         GBS::GBS_PRESET_CUSTOM::write(1); // use one reserved bit to mark this as a custom preset
         // don't store scanlines
-        if (GBS::GBS_OPTION_SCANLINES_ENABLED::read() == 1) {
+        bool scanlinesWereOn = (GBS::GBS_OPTION_SCANLINES_ENABLED::read() == 1);
+        if (scanlinesWereOn) {
             disableScanlines();
         }
 
@@ -206,6 +207,16 @@ void savePresetToLittleFS()
         SerialM.print(F("preset saved as: "));
         SerialM.println(f.name());
         f.close();
+
+        // restore the live state the dump deliberately excluded
+        if (scanlinesWereOn) {
+            enableScanlines();
+            if (rto->crtMode) {
+                // re-apply CRT seasoning that enableScanlines() overwrote
+                GBS::MADPT_VIIR_COEF::write(0x40);
+                GBS::MADPT_VTAP2_COEFF::write(0xF);
+            }
+        }
     }
 }
 

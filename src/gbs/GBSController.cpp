@@ -1687,12 +1687,16 @@ void applyPicAdjust()
 // slight chroma U delay for grille-style fringing, vertical+chroma peaking,
 // black expansion and a sat/contrast pop. Previous state is snapshotted
 // and restored on toggle-off.
-void setCrtMode(uint8_t on)
+// mode: 0 = off, 1 = soft CRT look, 2 = user's brighter tuned variant
+// (white expand + stronger proc-amp + lighter 0x20 scanlines).
+// Snapshot happens once when entering from off; switching 1<->2 only
+// re-applies the mode-specific seasoning computed from the saved bases.
+void setCrtMode(uint8_t mode)
 {
     typedef TV5725<GBS_ADDR> GBS;
-    if (on == rto->crtMode)
+    if (mode == rto->crtMode)
         return;
-    if (on) {
+    if (mode && !rto->crtMode) {
         rto->crtSavedScan = rto->scanlinesEnabled ? 1 : 0;
         rto->crtSavedFx = rto->fxFlags;
         rto->crtSavedChroma = rto->chromaShift;
@@ -1713,7 +1717,11 @@ void setCrtMode(uint8_t on)
         rto->crtSavedVtap2 = GBS::MADPT_VTAP2_COEFF::read();
         rto->crtSavedInts = (GBS::VDS_1ST_INT_BYPS::read() & 1) |
                             ((GBS::VDS_2ND_INT_BYPS::read() & 1) << 1);
-        rto->crtMode = 1;
+        rto->crtSavedWlev = GBS::VDS_W_LEV_BYPS::read();
+        rto->crtSavedSlStr = uopt->scanlineStrength;
+    }
+    if (mode) {
+        rto->crtMode = mode;
         if (!rto->scanlinesEnabled)
             enableScanlines();
         GBS::VDS_D_RAM_BYPS::write(0); // VDS line filter: part of the look
@@ -1743,20 +1751,38 @@ void setCrtMode(uint8_t on)
         GBS::VDS_HSCALE::write(rto->crtSavedHscale - 1);
         rto->maskHscaleBase = rto->crtSavedHscale;
         rto->maskMoireOff = -1;
-        // user's preferred look: +2 bright, +2 contrast, +2 sat
-        rto->picBright += 2;
-        rto->picContrast += 2;
-        rto->picSat += 2;
+        if (mode == 2) {
+            // user's tuned variant: white expand + lighter scanlines
+            GBS::VDS_W_LEV_BYPS::write(0);
+            rto->fxFlags |= 0x04;
+            uopt->scanlineStrength = 0x20;
+            GBS::MADPT_Y_MI_OFFSET::write(0x20);
+            GBS::MADPT_UV_MI_OFFSET::write(0x20);
+            rto->picBright = rto->crtSavedBright + 8;
+            rto->picContrast = rto->crtSavedContrast + 7;
+            rto->picSat = rto->crtSavedSat + 5;
+        } else {
+            GBS::VDS_W_LEV_BYPS::write(rto->crtSavedWlev);
+            rto->fxFlags = (rto->fxFlags & ~0x04) | (rto->crtSavedFx & 0x04);
+            uopt->scanlineStrength = rto->crtSavedSlStr;
+            GBS::MADPT_Y_MI_OFFSET::write(rto->crtSavedSlStr);
+            GBS::MADPT_UV_MI_OFFSET::write(rto->crtSavedSlStr);
+            rto->picBright = rto->crtSavedBright + 2;
+            rto->picContrast = rto->crtSavedContrast + 2;
+            rto->picSat = rto->crtSavedSat + 2;
+        }
         applyPicAdjust();
     } else {
         rto->crtMode = 0;
         if (rto->crtSavedScan == 0 && rto->scanlinesEnabled)
             disableScanlines();
-        // restore the two fx bits we forced on
-        rto->fxFlags = (rto->fxFlags & ~0x12) | (rto->crtSavedFx & 0x12);
+        // restore the fx bits we forced on (vpk, black exp, white exp)
+        rto->fxFlags = (rto->fxFlags & ~0x16) | (rto->crtSavedFx & 0x16);
         GBS::VDS_PK_Y_V_BYPS::write((rto->fxFlags & 0x10) ? 0 : 1);
         GBS::VDS_C_VPK_BYPS::write((rto->fxFlags & 0x10) ? 0 : 1);
         GBS::VDS_BLEV_BYPS::write((rto->fxFlags & 0x02) ? 0 : 1);
+        GBS::VDS_W_LEV_BYPS::write(rto->crtSavedWlev);
+        uopt->scanlineStrength = rto->crtSavedSlStr;
         GBS::VDS_D_RAM_BYPS::write(rto->crtSavedLpf);
         rto->chromaShift = rto->crtSavedChroma;
         GBS::VDS_U_DELAY::write(rto->chromaShift & 1);
@@ -1781,7 +1807,7 @@ void setCrtMode(uint8_t on)
         applyPicAdjust();
     }
     SerialM.print(F("crt mode: "));
-    SerialM.println(on ? F("on") : F("off"));
+    SerialM.println(mode);
 }
 
 void setOutModeHdBypass(bool regsInitialized)

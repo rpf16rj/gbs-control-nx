@@ -1462,7 +1462,7 @@ const updateStatusInfo = () => {
       setLabel("gbsLblChroma", `Chroma ${s.chroma === 0 ? "Off" : s.chroma}`);
       setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
       setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
-      setLabel("gbsLblCrt", `CRT ${s.crt ? "On" : "Off"}`);
+      setLabel("gbsLblCrt", `CRT ${s.crt ? s.crt : "Off"}`);
       setLabel("gbsLblGrille", `Lines 0x${(s.sl_str ?? 48).toString(16)}`);
       setLabel("gbsLblInterp", `Interp Byp ${s.interp ? "On" : "Off"}`);
       setLabel("gbsLblNr", `NR ${s.fx & 0x01 ? "On" : "Off"}`);
