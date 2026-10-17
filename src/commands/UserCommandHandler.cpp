@@ -706,23 +706,27 @@ void handleType2Command(char argument)
             SerialM.println(rto->outSyncSel);
             } break;
         case 'd': {
-            // "aperture grille" experiment: deliberate offsets on VDS_HSCALE
-            // create periodic column brightness variation (vertical dark
-            // stripes) - the horizontal equivalent of what scanlines do with
-            // line interpolation. Cycle through +/- offsets back to normal.
-            static const int8_t offs[8] = {0, 1, 2, 4, -1, -2, -4, -8};
-            // capture the base whenever we're at neutral offset - keeps the
-            // cycle centered even if CRT mode or a preset changed HSCALE
-            if (rto->maskMoireOff == 0 || rto->maskHscaleBase == 0xffff) {
-                rto->maskHscaleBase = GBS::VDS_HSCALE::read();
+            // scanline line-weight: cycles the MADPT mixing offsets that
+            // enableScanlines() uses (darker <-> lighter dark lines).
+            // Persisted via uopt->scanlineStrength (pref #18); applied live
+            // when scanlines are on, and picked up on the next enable.
+            static const uint8_t str[6] = {0x10, 0x20, 0x30, 0x40, 0x60, 0x80};
+            uint8_t idx = 0;
+            for (uint8_t i = 0; i < 6; i++) {
+                if (str[i] == uopt->scanlineStrength) {
+                    idx = i;
+                    break;
+                }
             }
-            rto->maskIdx = (rto->maskIdx + 1) % 8;
-            rto->maskMoireOff = offs[rto->maskIdx];
-            GBS::VDS_HSCALE::write((uint16_t)((int)rto->maskHscaleBase + rto->maskMoireOff));
-            SerialM.print(F("mask moire off: "));
-            SerialM.print((int)rto->maskMoireOff);
-            SerialM.print(F(" hscale: 0x"));
-            SerialM.println(GBS::VDS_HSCALE::read(), HEX);
+            idx = (idx + 1) % 6;
+            uopt->scanlineStrength = str[idx];
+            if (rto->scanlinesEnabled) {
+                GBS::MADPT_Y_MI_OFFSET::write(uopt->scanlineStrength);
+                GBS::MADPT_UV_MI_OFFSET::write(uopt->scanlineStrength);
+            }
+            SerialM.print(F("scanline strength: 0x"));
+            SerialM.println(uopt->scanlineStrength, HEX);
+            saveUserPrefs();
             } break;
         case 'Y': {
             // composite-style chroma shift (color fringing, mask-like effect):

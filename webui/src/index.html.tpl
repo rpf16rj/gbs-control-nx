@@ -471,8 +471,8 @@
                 gbs-click="repeat"
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
-                <div class="gbs-icon">view_column</div>
-                <div id="gbsLblGrille">Grille</div>
+                <div class="gbs-icon">line_weight</div>
+                <div id="gbsLblGrille">Lines</div>
               </button>
               <button
                 gbs-message="B"

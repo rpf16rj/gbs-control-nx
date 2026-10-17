@@ -1166,8 +1166,8 @@ section[name="alert"] {
                 gbs-click="repeat"
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
-                <div class="gbs-icon">view_column</div>
-                <div id="gbsLblGrille">Grille</div>
+                <div class="gbs-icon">line_weight</div>
+                <div id="gbsLblGrille">Lines</div>
               </button>
               <button
                 gbs-message="B"
@@ -3895,7 +3895,7 @@ const updateStatusInfo = () => {
         setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
         setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
         setLabel("gbsLblCrt", `CRT ${s.crt ? "On" : "Off"}`);
-        setLabel("gbsLblGrille", `Grille ${(_b = s.mask_off) !== null && _b !== void 0 ? _b : 0}`);
+        setLabel("gbsLblGrille", `Lines 0x${((_b = s.sl_str) !== null && _b !== void 0 ? _b : 48).toString(16)}`);
         setLabel("gbsLblInterp", `Interp Byp ${s.interp ? "On" : "Off"}`);
         setLabel("gbsLblNr", `NR ${s.fx & 0x01 ? "On" : "Off"}`);
         setLabel("gbsLblBlev", `Black Exp ${s.fx & 0x02 ? "On" : "Off"}`);
