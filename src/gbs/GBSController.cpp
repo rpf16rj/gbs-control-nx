@@ -1698,8 +1698,19 @@ void setCrtMode(uint8_t on)
         rto->crtSavedChroma = rto->chromaShift;
         rto->crtSavedSat = rto->picSat;
         rto->crtSavedContrast = rto->picContrast;
+        rto->crtSavedBright = rto->picBright;
         rto->crtSavedHscale = GBS::VDS_HSCALE::read();
         rto->crtSavedLpf = GBS::VDS_D_RAM_BYPS::read();
+        rto->crtSavedPkYhByps = GBS::VDS_PK_Y_H_BYPS::read();
+        rto->crtSavedStepGain = GBS::VDS_STEP_GAIN::read();
+        rto->crtSavedStepClip = GBS::VDS_STEP_CLIP::read();
+        rto->crtSavedPkGain[0] = GBS::VDS_PK_LB_GAIN::read();
+        rto->crtSavedPkGain[1] = GBS::VDS_PK_LH_GAIN::read();
+        rto->crtSavedPkGain[2] = GBS::VDS_PK_HL_GAIN::read();
+        rto->crtSavedPkGain[3] = GBS::VDS_PK_HB_GAIN::read();
+        rto->crtSavedPkGain[4] = GBS::VDS_PK_HH_GAIN::read();
+        rto->crtSavedViir = GBS::MADPT_VIIR_COEF::read();
+        rto->crtSavedVtap2 = GBS::MADPT_VTAP2_COEFF::read();
         rto->crtMode = 1;
         if (!rto->scanlinesEnabled)
             enableScanlines();
@@ -1710,11 +1721,26 @@ void setCrtMode(uint8_t on)
         rto->fxFlags |= 0x12; // vpk + black expansion
         GBS::VDS_U_DELAY::write(1);
         rto->chromaShift |= 1;
-        GBS::VDS_HSCALE::write(rto->crtSavedHscale + 2); // grille stripes
+        // softer-than-zero: peaking fully off, minimum step response,
+        // stronger vertical tap/iir blending -> gentle "meio borrado"
+        GBS::VDS_PK_Y_H_BYPS::write(1);
+        GBS::VDS_PK_LB_GAIN::write(0);
+        GBS::VDS_PK_LH_GAIN::write(0);
+        GBS::VDS_PK_HL_GAIN::write(0);
+        GBS::VDS_PK_HB_GAIN::write(0);
+        GBS::VDS_PK_HH_GAIN::write(0);
+        GBS::VDS_STEP_GAIN::write(0);
+        GBS::VDS_STEP_CLIP::write(3);
+        GBS::MADPT_VIIR_COEF::write(0x20);
+        GBS::MADPT_VTAP2_COEFF::write(0xC);
+        // grille stripes at the offset the user preferred (-1)
+        GBS::VDS_HSCALE::write(rto->crtSavedHscale - 1);
         rto->maskHscaleBase = rto->crtSavedHscale;
-        rto->maskMoireOff = 2;
-        rto->picSat += 1;
-        rto->picContrast += 1;
+        rto->maskMoireOff = -1;
+        // user's preferred look: +4 bright, +4 contrast, +2 sat
+        rto->picBright += 4;
+        rto->picContrast += 4;
+        rto->picSat += 2;
         applyPicAdjust();
     } else {
         rto->crtMode = 0;
@@ -1731,8 +1757,19 @@ void setCrtMode(uint8_t on)
         GBS::VDS_V_DELAY::write((rto->chromaShift >> 1) & 1);
         GBS::VDS_HSCALE::write(rto->crtSavedHscale);
         rto->maskMoireOff = 0;
+        GBS::VDS_PK_Y_H_BYPS::write(rto->crtSavedPkYhByps);
+        GBS::VDS_STEP_GAIN::write(rto->crtSavedStepGain);
+        GBS::VDS_STEP_CLIP::write(rto->crtSavedStepClip);
+        GBS::VDS_PK_LB_GAIN::write(rto->crtSavedPkGain[0]);
+        GBS::VDS_PK_LH_GAIN::write(rto->crtSavedPkGain[1]);
+        GBS::VDS_PK_HL_GAIN::write(rto->crtSavedPkGain[2]);
+        GBS::VDS_PK_HB_GAIN::write(rto->crtSavedPkGain[3]);
+        GBS::VDS_PK_HH_GAIN::write(rto->crtSavedPkGain[4]);
+        GBS::MADPT_VIIR_COEF::write(rto->crtSavedViir);
+        GBS::MADPT_VTAP2_COEFF::write(rto->crtSavedVtap2);
         rto->picSat = rto->crtSavedSat;
         rto->picContrast = rto->crtSavedContrast;
+        rto->picBright = rto->crtSavedBright;
         applyPicAdjust();
     }
     SerialM.print(F("crt mode: "));

@@ -127,8 +127,15 @@ struct runTimeOptions
     uint8_t crtSavedChroma;
     int8_t crtSavedSat;
     int8_t crtSavedContrast;
+    int8_t crtSavedBright;
     uint16_t crtSavedHscale;
     uint8_t crtSavedLpf;
+    uint8_t crtSavedPkYhByps;
+    uint8_t crtSavedStepGain;
+    uint8_t crtSavedStepClip;
+    uint8_t crtSavedViir;
+    uint8_t crtSavedVtap2;
+    uint8_t crtSavedPkGain[5];
 };
 // remember adc options across presets
 struct adcOptions
