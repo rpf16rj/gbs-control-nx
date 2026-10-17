@@ -386,7 +386,10 @@ void startWebserver()
                 slotsObject.slot[slotIndex].slot = slotIndex;
                 slotName.toCharArray(slotsObject.slot[slotIndex].name, sizeof(slotsObject.slot[slotIndex].name));
                 slotsObject.slot[slotIndex].presetID = rto->presetID;
-                slotsObject.slot[slotIndex].scanlines = uopt->wantScanlines;
+                // save the live scanline state (CRT mode enables them
+                // without touching uopt->wantScanlines)
+                slotsObject.slot[slotIndex].scanlines = rto->scanlinesEnabled;
+                uopt->wantScanlines = rto->scanlinesEnabled;
                 slotsObject.slot[slotIndex].scanlinesStrength = uopt->scanlineStrength;
                 slotsObject.slot[slotIndex].wantVdsLineFilter = uopt->wantVdsLineFilter;
                 slotsObject.slot[slotIndex].wantStepResponse = uopt->wantStepResponse;

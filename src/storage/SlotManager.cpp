@@ -24,6 +24,7 @@ const uint8_t *loadPresetFromLittleFS(byte forVideoMode)
     Ascii8 slot = 0;
     File f;
 
+    gCrtMarkerLen = 0;
     f = LittleFS.open("/preferencesv2.txt", "r");
     if (f) {
         SerialM.println(F("preferencesv2.txt opened"));
@@ -76,7 +77,21 @@ const uint8_t *loadPresetFromLittleFS(byte forVideoMode)
     } else {
         SerialM.println(f.name());
         s = f.readStringUntil('}');
+        // optional CRT marker after the array: "//crt=<mode>,<values...>"
+        // (older firmware ignores it - it stops reading at '}')
+        String tail = f.readString();
         f.close();
+        int mi = tail.indexOf(F("//crt="));
+        if (mi >= 0) {
+            char *tp = &tail[mi + 6];
+            uint8_t n = 0;
+            char *tok = strtok(tp, ",}\r\n");
+            while (tok && n < CRT_MARKER_LEN) {
+                gCrtMarker[n++] = (int16_t)atoi(tok);
+                tok = strtok(NULL, ",}\r\n");
+            }
+            gCrtMarkerLen = n;
+        }
     }
 
     char *tmp;
@@ -145,8 +160,12 @@ void savePresetToLittleFS()
         GBS::GBS_PRESET_CUSTOM::write(1); // use one reserved bit to mark this as a custom preset
         // don't store scanlines
         bool scanlinesWereOn = (GBS::GBS_OPTION_SCANLINES_ENABLED::read() == 1);
+        uint8_t wlevBypsBefore = GBS::VDS_W_LEV_BYPS::read();
         if (scanlinesWereOn) {
             disableScanlines();
+            // disableScanlines() also flips W_LEV_BYPS (a dumped VDS reg) -
+            // restore it so white-expand survives into the saved profile
+            GBS::VDS_W_LEV_BYPS::write(wlevBypsBefore);
         }
 
         if (!rto->extClockGenDetected) {
@@ -204,6 +223,43 @@ void savePresetToLittleFS()
             }
         }
         f.println("};");
+
+        // CRT-mode marker (ignored by older firmware): mode + the pre-CRT
+        // snapshot, so a profile saved with CRT on can fully restore it -
+        // including the segment-2 registers the dump above doesn't cover.
+        if (rto->crtMode) {
+            f.print(F("//crt="));
+            f.print(rto->crtMode);
+            f.print(',');
+            f.print(rto->yGainBase); f.print(',');
+            f.print(rto->yOfstBase); f.print(',');
+            f.print(rto->ucosBase); f.print(',');
+            f.print(rto->vcosBase); f.print(',');
+            f.print(rto->usinBase); f.print(',');
+            f.print(rto->vsinBase); f.print(',');
+            f.print(rto->crtSavedFx); f.print(',');
+            f.print(rto->crtSavedScan); f.print(',');
+            f.print(rto->crtSavedChroma); f.print(',');
+            f.print(rto->crtSavedSat); f.print(',');
+            f.print(rto->crtSavedContrast); f.print(',');
+            f.print(rto->crtSavedBright); f.print(',');
+            f.print(rto->crtSavedHscale & 0xff); f.print(',');
+            f.print(rto->crtSavedHscale >> 8); f.print(',');
+            f.print(rto->crtSavedLpf); f.print(',');
+            f.print(rto->crtSavedPkYhByps); f.print(',');
+            f.print(rto->crtSavedStepGain); f.print(',');
+            f.print(rto->crtSavedStepClip); f.print(',');
+            f.print(rto->crtSavedViir); f.print(',');
+            f.print(rto->crtSavedVtap2); f.print(',');
+            f.print(rto->crtSavedInts); f.print(',');
+            f.print(rto->crtSavedWlev); f.print(',');
+            f.print(rto->crtSavedSlStr);
+            for (int i = 0; i < 5; i++) {
+                f.print(',');
+                f.print(rto->crtSavedPkGain[i]);
+            }
+            f.println();
+        }
         SerialM.print(F("preset saved as: "));
         SerialM.println(f.name());
         f.close();

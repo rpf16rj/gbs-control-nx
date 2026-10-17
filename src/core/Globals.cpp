@@ -67,6 +67,10 @@ int16_t apiLastRegRead = -1;
 // Best observed Si5351 XTAL load capacitance setting from detection/init.
 uint8_t g_si5351_best_xtal_cl = 0xD2; // 10pF default
 
+// CRT-mode marker from the last loaded preset file (see SlotManager.cpp)
+int16_t gCrtMarker[CRT_MARKER_LEN];
+uint8_t gCrtMarkerLen = 0;
+
 // SerialMirror instance (will be moved to SerialMirror.cpp)
 // extern SerialMirror SerialM; - will be defined in SerialMirror.cpp
 

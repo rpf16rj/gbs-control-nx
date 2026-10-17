@@ -1219,6 +1219,7 @@ void doPostPresetLoadSteps()
     // effects it was saved with, a factory preset resets them. Nothing is
     // persisted across reboots outside of preset slots / user prefs.
     syncExperimentalStateFromRegs();
+    restoreCrtFromMarker(); // if the loaded preset embeds a CRT snapshot
     applyPicAdjust(); // re-apply picture deltas over the new preset's bases
 
 
@@ -1653,6 +1654,64 @@ void syncExperimentalStateFromRegs()
     rto->picBright = rto->picContrast = rto->picSat = rto->picHue = 0;
 }
 
+// Re-apply a CRT look saved into this preset file ("//crt=" marker).
+// The dumped registers already carry every segment-3 VDS value, so this
+// only reinstates what the dump and slot flags can't: the segment-2 MADPT
+// seasoning (scanline mix/VIIR/VTAP2), the bookkeeping fields, and the
+// pre-CRT snapshot so a later CRT-off restores exactly.
+void restoreCrtFromMarker()
+{
+    typedef TV5725<GBS_ADDR> GBS;
+    if (gCrtMarkerLen != CRT_MARKER_LEN || gCrtMarker[0] == 0)
+        return;
+    uint8_t mode = (uint8_t)gCrtMarker[0];
+    // pre-CRT proc-amp bases of the preset this profile was tuned on
+    rto->yGainBase = (uint8_t)gCrtMarker[1];
+    rto->yOfstBase = (int8_t)gCrtMarker[2];
+    rto->ucosBase = (uint8_t)gCrtMarker[3];
+    rto->vcosBase = (uint8_t)gCrtMarker[4];
+    rto->usinBase = (int8_t)gCrtMarker[5];
+    rto->vsinBase = (int8_t)gCrtMarker[6];
+    rto->crtSavedFx = (uint8_t)gCrtMarker[7];
+    rto->crtSavedScan = (uint8_t)gCrtMarker[8];
+    rto->crtSavedChroma = (uint8_t)gCrtMarker[9];
+    rto->crtSavedSat = (int8_t)gCrtMarker[10];
+    rto->crtSavedContrast = (int8_t)gCrtMarker[11];
+    rto->crtSavedBright = (int8_t)gCrtMarker[12];
+    rto->crtSavedHscale = (uint16_t)(gCrtMarker[13] & 0xff) | ((uint16_t)gCrtMarker[14] << 8);
+    rto->crtSavedLpf = (uint8_t)gCrtMarker[15];
+    rto->crtSavedPkYhByps = (uint8_t)gCrtMarker[16];
+    rto->crtSavedStepGain = (uint8_t)gCrtMarker[17];
+    rto->crtSavedStepClip = (uint8_t)gCrtMarker[18];
+    rto->crtSavedViir = (uint8_t)gCrtMarker[19];
+    rto->crtSavedVtap2 = (uint8_t)gCrtMarker[20];
+    rto->crtSavedInts = (uint8_t)gCrtMarker[21];
+    rto->crtSavedWlev = (uint8_t)gCrtMarker[22];
+    rto->crtSavedSlStr = (uint8_t)gCrtMarker[23];
+    for (int i = 0; i < 5; i++)
+        rto->crtSavedPkGain[i] = (uint8_t)gCrtMarker[24 + i];
+
+    rto->crtMode = mode;
+    // flags as the mode defines them (VDS regs already carry them via dump)
+    rto->fxFlags = (rto->crtSavedFx & ~0x16) | 0x12 | (mode == 2 ? 0x04 : 0);
+    rto->chromaShift = rto->crtSavedChroma | 1;
+    rto->maskHscaleBase = rto->crtSavedHscale;
+    rto->maskMoireOff = -1;
+    rto->picBright = rto->crtSavedBright + (mode == 2 ? 6 : 2);
+    rto->picContrast = rto->crtSavedContrast + (mode == 2 ? 3 : 2);
+    rto->picSat = rto->crtSavedSat + 2;
+    // scanlines: CRT implies them; the seg2 regs are the part the dump skips
+    uopt->wantScanlines = 1;
+    if (!rto->scanlinesEnabled)
+        enableScanlines();
+    GBS::MADPT_VIIR_COEF::write(0x40);
+    GBS::MADPT_VTAP2_COEFF::write(0xF);
+    GBS::MADPT_Y_MI_OFFSET::write(uopt->scanlineStrength);
+    GBS::MADPT_UV_MI_OFFSET::write(uopt->scanlineStrength);
+    SerialM.print(F("crt mode restored from preset: "));
+    SerialM.println(mode);
+}
+
 // Picture proc-amp on the chip's YUV matrix (s3_35..3_3C):
 //   contrast: VDS_Y_GAIN scaled around the preset base
 //   brightness: VDS_Y_OFST additive (signed)
@@ -1758,9 +1817,9 @@ void setCrtMode(uint8_t mode)
             uopt->scanlineStrength = 0x20;
             GBS::MADPT_Y_MI_OFFSET::write(0x20);
             GBS::MADPT_UV_MI_OFFSET::write(0x20);
-            rto->picBright = rto->crtSavedBright + 8;
-            rto->picContrast = rto->crtSavedContrast + 7;
-            rto->picSat = rto->crtSavedSat + 5;
+            rto->picBright = rto->crtSavedBright + 6;
+            rto->picContrast = rto->crtSavedContrast + 3;
+            rto->picSat = rto->crtSavedSat + 2;
         } else {
             GBS::VDS_W_LEV_BYPS::write(rto->crtSavedWlev);
             rto->fxFlags = (rto->fxFlags & ~0x04) | (rto->crtSavedFx & 0x04);

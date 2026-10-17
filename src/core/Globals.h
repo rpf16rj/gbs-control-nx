@@ -101,6 +101,13 @@ extern unsigned long lastVsyncLock;
 extern uint8_t lastSegment;
 extern uint8_t g_si5351_best_xtal_cl;
 
+// CRT-mode marker parsed from the tail of a saved preset file
+// ("//crt=<mode>,<29 values>"). Written by savePresetToLittleFS(),
+// consumed by restoreCrtFromMarker() after a preset load.
+#define CRT_MARKER_LEN 29
+extern int16_t gCrtMarker[CRT_MARKER_LEN];
+extern uint8_t gCrtMarkerLen; // 0 = no marker in loaded preset
+
 // WiFi configuration (defined in WiFiConfig.h)
 extern const char *ap_ssid;
 extern const char *ap_password;

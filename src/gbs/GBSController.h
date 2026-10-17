@@ -24,6 +24,7 @@ void applyCrispMode(uint8_t on);
 void syncExperimentalStateFromRegs();
 void applyPicAdjust();
 void setCrtMode(uint8_t on);
+void restoreCrtFromMarker();
 // getVideoMode(), getSyncPresent(), getStatus16SpHsStable(), getStatus00IfHsVsStable() are declared in VideoInput.h
 void setOverSampleRatio(uint8_t newRatio, boolean prepareOnly);
 void setOutModeHdBypass(bool regsInitialized);
