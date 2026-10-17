@@ -711,10 +711,12 @@ void handleType2Command(char argument)
             // stripes) - the horizontal equivalent of what scanlines do with
             // line interpolation. Cycle through +/- offsets back to normal.
             static const int8_t offs[8] = {0, 1, 2, 4, -1, -2, -4, -8};
-            rto->maskIdx = (rto->maskIdx + 1) % 8;
-            if (rto->maskIdx == 1 || rto->maskHscaleBase == 0xffff) {
-                rto->maskHscaleBase = GBS::VDS_HSCALE::read(); // capture preset's value
+            // capture the base whenever we're at neutral offset - keeps the
+            // cycle centered even if CRT mode or a preset changed HSCALE
+            if (rto->maskMoireOff == 0 || rto->maskHscaleBase == 0xffff) {
+                rto->maskHscaleBase = GBS::VDS_HSCALE::read();
             }
+            rto->maskIdx = (rto->maskIdx + 1) % 8;
             rto->maskMoireOff = offs[rto->maskIdx];
             GBS::VDS_HSCALE::write((uint16_t)((int)rto->maskHscaleBase + rto->maskMoireOff));
             SerialM.print(F("mask moire off: "));

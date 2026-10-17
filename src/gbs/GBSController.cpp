@@ -1699,9 +1699,11 @@ void setCrtMode(uint8_t on)
         rto->crtSavedSat = rto->picSat;
         rto->crtSavedContrast = rto->picContrast;
         rto->crtSavedHscale = GBS::VDS_HSCALE::read();
+        rto->crtSavedLpf = GBS::VDS_D_RAM_BYPS::read();
         rto->crtMode = 1;
         if (!rto->scanlinesEnabled)
             enableScanlines();
+        GBS::VDS_D_RAM_BYPS::write(0); // VDS line filter: part of the look
         GBS::VDS_PK_Y_V_BYPS::write(0);
         GBS::VDS_C_VPK_BYPS::write(0);
         GBS::VDS_BLEV_BYPS::write(0);
@@ -1723,6 +1725,7 @@ void setCrtMode(uint8_t on)
         GBS::VDS_PK_Y_V_BYPS::write((rto->fxFlags & 0x10) ? 0 : 1);
         GBS::VDS_C_VPK_BYPS::write((rto->fxFlags & 0x10) ? 0 : 1);
         GBS::VDS_BLEV_BYPS::write((rto->fxFlags & 0x02) ? 0 : 1);
+        GBS::VDS_D_RAM_BYPS::write(rto->crtSavedLpf);
         rto->chromaShift = rto->crtSavedChroma;
         GBS::VDS_U_DELAY::write(rto->chromaShift & 1);
         GBS::VDS_V_DELAY::write((rto->chromaShift >> 1) & 1);

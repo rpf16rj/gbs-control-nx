@@ -466,6 +466,15 @@
             </div>
             <div class="gbs-flex">
               <button
+                gbs-message="d"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">view_column</div>
+                <div id="gbsLblGrille">Grille</div>
+              </button>
+              <button
                 gbs-message="B"
                 gbs-message-type="serial"
                 gbs-click="normal"

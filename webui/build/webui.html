@@ -1161,6 +1161,15 @@ section[name="alert"] {
             </div>
             <div class="gbs-flex">
               <button
+                gbs-message="d"
+                gbs-message-type="user"
+                gbs-click="repeat"
+                class="gbs-button gbs-button__control gbs-button__secondary"
+              >
+                <div class="gbs-icon">view_column</div>
+                <div id="gbsLblGrille">Grille</div>
+              </button>
+              <button
                 gbs-message="B"
                 gbs-message-type="serial"
                 gbs-click="normal"
@@ -3840,7 +3849,7 @@ const updateStatusInfo = () => {
     fetch(`/api/v1/status?${+new Date()}`)
         .then((r) => r.json())
         .then((s) => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
         const el = document.getElementById("gbsInfoText");
         if (!el) {
             return;
@@ -3886,6 +3895,7 @@ const updateStatusInfo = () => {
         setLabel("gbsLblSync2", `Sync2 ${s.sync2_en ? "On" : "Off"}`);
         setLabel("gbsLblSyncSel", `Sync Src ${s.sync_sel}`);
         setLabel("gbsLblCrt", `CRT ${s.crt ? "On" : "Off"}`);
+        setLabel("gbsLblGrille", `Grille ${(_b = s.mask_off) !== null && _b !== void 0 ? _b : 0}`);
         setLabel("gbsLblInterp", `Interp Byp ${s.interp ? "On" : "Off"}`);
         setLabel("gbsLblNr", `NR ${s.fx & 0x01 ? "On" : "Off"}`);
         setLabel("gbsLblBlev", `Black Exp ${s.fx & 0x02 ? "On" : "Off"}`);
@@ -3896,18 +3906,18 @@ const updateStatusInfo = () => {
         setLabel("gbsLblCc", `Color Corr ${s.fx & 0x40 ? "On" : "Off"}`);
         setLabel("gbsLblNs", `Chroma NS ${s.fx & 0x80 ? "On" : "Off"}`);
         setLabel("gbsLblCrisp", `Crisp ${s.crisp ? "On" : "Off"}`);
-        setLabel("gbsLblStep", `Step 0x${((_b = s.step) !== null && _b !== void 0 ? _b : 0).toString(16)}`);
+        setLabel("gbsLblStep", `Step 0x${((_c = s.step) !== null && _c !== void 0 ? _c : 0).toString(16)}`);
         setLabel("gbsLblCore", `Coring ${s.core}`);
-        setLabel("gbsLblPclkM", `PCLK ${(_c = s.pll_divider) !== null && _c !== void 0 ? _c : "-"} -`);
-        setLabel("gbsLblPclkP", `PCLK ${(_d = s.pll_divider) !== null && _d !== void 0 ? _d : "-"} +`);
-        setLabel("gbsLblOsr", `OSR ${(_e = s.osr) !== null && _e !== void 0 ? _e : 0}x`);
+        setLabel("gbsLblPclkM", `PCLK ${(_d = s.pll_divider) !== null && _d !== void 0 ? _d : "-"} -`);
+        setLabel("gbsLblPclkP", `PCLK ${(_e = s.pll_divider) !== null && _e !== void 0 ? _e : "-"} +`);
+        setLabel("gbsLblOsr", `OSR ${(_f = s.osr) !== null && _f !== void 0 ? _f : 0}x`);
         setLabel("gbsLblPhAdc", `Ph ADC ${s.phase_adc} +`);
         setLabel("gbsLblPhSp", `Ph SP ${s.phase_sp} +`);
         setLabel("gbsLblInt", `480i Out ${s.int_out ? "On" : "Off"}`);
-        setLabel("gbsLblBright", `Bright ${(_f = s.bright) !== null && _f !== void 0 ? _f : 0}`);
-        setLabel("gbsLblContr", `Contr ${(_g = s.contrast) !== null && _g !== void 0 ? _g : 0}`);
-        setLabel("gbsLblSat", `Sat ${(_h = s.sat) !== null && _h !== void 0 ? _h : 0}`);
-        setLabel("gbsLblHue", `Hue ${(_j = s.hue) !== null && _j !== void 0 ? _j : 0}`);
+        setLabel("gbsLblBright", `Bright ${(_g = s.bright) !== null && _g !== void 0 ? _g : 0}`);
+        setLabel("gbsLblContr", `Contr ${(_h = s.contrast) !== null && _h !== void 0 ? _h : 0}`);
+        setLabel("gbsLblSat", `Sat ${(_j = s.sat) !== null && _j !== void 0 ? _j : 0}`);
+        setLabel("gbsLblHue", `Hue ${(_k = s.hue) !== null && _k !== void 0 ? _k : 0}`);
     })
         .catch(() => { });
 };
